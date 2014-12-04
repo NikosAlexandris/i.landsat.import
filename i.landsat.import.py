@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 """
-MODULE:          r.in.landsat  (or i.landsat.import?)
+MODULE:         r.in.landsat  (or i.landsat.import?)
 
 AUTHOR(S):      Martin Landa
                 <http://grasswiki.osgeo.org/wiki/LANDSAT#Automated_data_import>
@@ -161,7 +161,7 @@ def import_geotiffs(mapset):
             band = int(name[-1:])
 
         # communicate
-        grass.message('%s > %s @%s...' % (file, name, mapset))
+        grass.message('%s -> %s @%s...' % (file, name, mapset))
 
         # create Mapset of interest
         run('g.mapset', flags='c',
@@ -170,16 +170,10 @@ def import_geotiffs(mapset):
 
         # import bands
         if isinstance(band, str):
-            run('r.in.gdal',
-                input=ffile, output=name,
-                overwrite=True,
-                title='band %s' % band)
+            run('r.in.gdal', input=ffile, output=name, title='band %s' % band)
 
         else:
-            run('r.in.gdal',
-                input=ffile, output=name,
-                overwrite=True,
-                title='band %d' % band)
+            run('r.in.gdal', input=ffile, output=name, title='band %d' % band)
 
         if meta:
             # add timestamp
@@ -193,19 +187,10 @@ def import_geotiffs(mapset):
 
 def main():
 
-    if options['scene']:
-        landsat_directory = [options['scene']]
+    landsat_scenes = options['scene'].split(',')
 
-#    if len(sys.argv) == 1:
-#    for directory in filter(os.path.isdir, os.listdir(os.getcwd())):
-#            import_geotiffs(directory)
-
-#        for directory in filter(os.path.isdir, os.listdir(landsat_directory)):
-        for directory in landsat_directory:
-            import_geotiffs(directory)
-
-    else:
-        import_geotiffs(sys.argv[1])
+    for directory in landsat_scenes:
+        import_geotiffs(directory)
 
 
 if __name__ == "__main__":
