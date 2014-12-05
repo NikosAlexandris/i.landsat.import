@@ -1,28 +1,8 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 
-"""
-MODULE:         r.in.landsat  (or i.landsat.import?)
-
-AUTHOR(S):      Martin Landa
-                <http://grasswiki.osgeo.org/wiki/LANDSAT#Automated_data_import>
-
-                Nikos Alexandris (handling Landsat 8 data)
-                Pietro Zambelli (various improvements)
-
-PURPOSE:        Automated importing of Landsat scenes in GRASS GIS' data base
-
-COPYRIGHT:     (C) 2013 by the GRASS Development Team
-
-                This program is free software under the GNU General Public
-                License (>=v2). Read the file COPYING that comes with GRASS
-                for details.
-
-ToDo            use grass.warning(_("...")?
-"""
-
 #%module
-#% description: Imports bands of Landsat scenes in independent Mapsets
+#% description: Imports bands of Landsat scenes (from compressed tar.gz files or untarred independent directories) in independent Mapsets
 #% keywords: imagery
 #% keywords: landsat
 #% keywords: import
@@ -33,12 +13,25 @@ ToDo            use grass.warning(_("...")?
 #%  description: Override projection check
 #%end
 
+#%flag
+#%  key: r
+#%  description: Remove untarred scene directory after import completion!
+#%end
+
 #%option
 #% key: scene
-#% key_desc: scene id(s)
+#% key_desc: name
 #% description: Directory containing one OR multiple Landsat scenes
 #% multiple: yes
-#% required: yes
+#% required: no
+#%end
+
+#%option
+#% key: pool
+#% key_desc: directory
+#% description: Directory containing multiple Landsat scenes as independent directories
+#% multiple: no
+#% required: no
 #%end
 
 # constants
@@ -46,13 +39,11 @@ MONTHS = {'01': 'jan', '02': 'feb', '03': 'mar', '04': 'apr', '05': 'may',
           '06': 'jun', '07': 'jul', '08': 'aug', '09': 'sep', '10': 'oct',
           '11': 'nov', '12': 'dec'}
 
-# globals
-
-
 # imports
 import os
-import shutil
 import sys
+import shutil
+import tarfile
 import glob
 import grass.script as grass
 
@@ -62,26 +53,26 @@ def run(cmd, **kwargs):
     grass.run_command(cmd, quiet=True, **kwargs)
 
 
-def copy_metafile(mapset):
-    """!Copies the *MTL.txt metadata file in the cell_misc directory inside
-    the Landsat scene's independent Mapset"""
+def extract_tgz(tgz):
 
-    # get the metadata file
+    # open tar.gz file in read mode
+    tar = tarfile.TarFile.open(name=tgz, mode='r')
+
+    # create a directory with the scene's (base)name
+    tgz_base = os.path.basename(tgz).split('.tar.gz')[0]
+
+    # try to create a directory with the landsat's scene (base)name
+    # source: <http://stackoverflow.com/a/14364249/1172302>
     try:
-        metafile = glob.glob(mapset + '/*MTL.txt')[0]
-        print '\nIdentified metadata file: <%s>.' % metafile.split('/')[1]
+        os.makedirs(tgz_base)
 
-    except IndexError:
-        return
+    # if something went wrong, then...
+    except OSError:
+        if not os.path.isdir(tgz_base):
+            raise
 
-    # get environment variables & define path to "cell_misc"
-    gisenv = grass.gisenv()
-    CELL_MISC_DIR = gisenv['GISDBASE'] + \
-        '/' + gisenv['LOCATION_NAME'] + '/' + gisenv['MAPSET'] + '/cell_misc'
-
-    # copy the metadata file -- better check if really copied!
-    print 'Will copy at: <%s>.\n' % CELL_MISC_DIR
-    shutil.copy(metafile, CELL_MISC_DIR)
+    # extract files indide the scene directory
+    tar.extractall(path=tgz_base)
 
 
 def get_timestamp(mapset):
@@ -113,11 +104,35 @@ def get_timestamp(mapset):
     return result
 
 
+def copy_metafile(mapset):
+    """!Copies the *MTL.txt metadata file in the cell_misc directory inside
+    the Landsat scene's independent Mapset"""
+
+    # get the metadata file
+    try:
+        metafile = glob.glob(mapset + '/*MTL.txt')[0]
+        print '\nIdentified metadata file: <%s>.' % metafile.split('/')[1]
+
+    except IndexError:
+        return
+
+    # get environment variables & define path to "cell_misc"
+    gisenv = grass.gisenv()
+    CELL_MISC_DIR = gisenv['GISDBASE'] + \
+        '/' + gisenv['LOCATION_NAME'] + '/' + gisenv['MAPSET'] + '/cell_misc'
+
+    # copy the metadata file -- better check if really copied!
+    print 'Will copy at: <%s>.\n' % CELL_MISC_DIR
+    shutil.copy(metafile, CELL_MISC_DIR)
+
+
 def import_geotiffs(mapset):
     """!Imports all bands (GeoTIF format) of a Landsat scene be it Landsat 5,
     7 or 8.  All known naming conventions are respected, such as "VCID" and
     "QA" found in newer Landsat scenes for temperature channels and Quality
     respectively."""
+
+    override_projection = flags['o']
 
     # communicate
     grass.message('Importing... \n')  # why is it printed twice?
@@ -164,13 +179,18 @@ def import_geotiffs(mapset):
         grass.message('%s -> %s @%s...' % (file, name, mapset))
 
         # create Mapset of interest
-        run('g.mapset', flags='c',
-            mapset=mapset,
-            stderr=open(os.devnull, 'w'))
+        run('g.mapset', flags='c', mapset=mapset, stderr=open(os.devnull, 'w'))
 
         # import bands
         if isinstance(band, str):
-            run('r.in.gdal', input=ffile, output=name, title='band %s' % band)
+
+            if override_projection:
+                run('r.in.gdal', input=ffile, output=name,
+                    title='band %s' % band)
+
+            else:
+                run('r.in.gdal', flags='o',
+                    input=ffile, output=name, title='band %s' % band)
 
         else:
             run('r.in.gdal', input=ffile, output=name, title='band %d' % band)
@@ -181,16 +201,40 @@ def import_geotiffs(mapset):
             run('r.timestamp', map=name,
                 date=' '.join((day, MONTHS[month], year)))
 
+    # communicate
+    grass.message('Scene imported in %s' % mapset)
+
     # copy metadata file (MTL)
     copy_metafile(mapset)
 
 
 def main():
 
-    landsat_scenes = options['scene'].split(',')
+    remove_untarred = flags['r']
 
-    for directory in landsat_scenes:
-        import_geotiffs(directory)
+    if options['pool']:
+        pool = options['pool']
+
+        for directory in filter(os.path.isdir, os.listdir(pool)):
+            import_geotiffs(directory)
+
+    if options['scene']:
+        landsat_scenes = options['scene'].split(',')
+
+        for scene in landsat_scenes:
+            if 'tar.gz' in scene:
+                grass.message('Extracting files from tar.gz file')
+                extract_tgz(scene)
+                scene = scene.split('.tar.gz')[0]
+
+                import_geotiffs(scene)
+
+                if remove_untarred:
+                    grass.message('Removing directory %s' % scene)
+                    shutil.rmtree(scene)
+
+            else:
+                import_geotiffs(scene)
 
 
 if __name__ == "__main__":
