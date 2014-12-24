@@ -21,7 +21,7 @@
 #%option
 #% key: scene
 #% key_desc: name
-#% description: Directory containing one OR multiple Landsat scenes
+#% description: Directory containing one OR multiple Landsat scenes (compressed tar.gz files)
 #% multiple: yes
 #% required: no
 #%end
@@ -29,7 +29,7 @@
 #%option
 #% key: pool
 #% key_desc: directory
-#% description: Directory containing multiple Landsat scenes as independent directories
+#% description: Directory containing multiple decompressed Landsat scenes as independent directories
 #% multiple: no
 #% required: no
 #%end
