@@ -15,7 +15,7 @@
 
 #%flag
 #%  key: r
-#%  description: Remove untarred scene directory after import completion!
+#%  description: Remove untarred scene directory after import completion
 #%end
 
 #%option
@@ -140,7 +140,7 @@ def import_geotiffs(mapset):
     # get the timestamp
     meta = get_timestamp(mapset)
 
-    # loop ober files inside a "Landsat" directory
+    # loop over files inside a "Landsat" directory
     for file in os.listdir(mapset):
 
         # if GeoTIFF, keep on working
@@ -176,6 +176,7 @@ def import_geotiffs(mapset):
             band = int(name[-1:])
 
         # communicate
+        grass.message('Basic map name: %s' % (name))
         grass.message('%s -> %s @%s...' % (file, name, mapset))
 
         # create Mapset of interest
