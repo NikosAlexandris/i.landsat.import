@@ -7,7 +7,8 @@
  AUTHOR(S):    Nikos Alexandris <nik@nikosalexandris.net>
                Based on a python script published in GRASS-Wiki
 
- PURPOSE:      Import Landsat scenes in GRASS' data base
+ PURPOSE:      Import Landsat scenes in independent Mapsets inside GRASS' data
+               base
 
  COPYRIGHT:    (C) 2017 by the GRASS Development Team
 
@@ -69,7 +70,9 @@ import sys
 import shutil
 import tarfile
 import glob
+import atexit
 import grass.script as grass
+from grass.pygrass.modules.shortcuts import general as g
 
 # globals
 MONTHS = {'01': 'jan', '02': 'feb', '03': 'mar', '04': 'apr', '05': 'may',
@@ -114,8 +117,8 @@ def get_metafile(scene):
     """
     """
     metafile = glob.glob(scene + '/*MTL.txt')[0]
-    # grass.message('\n | Metadata file: <%s>.' % metafile.split('/')[1])
-    # grass.message('\nIdentified metadata file: <%s>.' % metafile)
+    # g.message('\n | Metadata file: <%s>.' % metafile.split('/')[1])
+    # g.message('\nIdentified metadata file: <%s>.' % metafile)
 
     return metafile
 
@@ -136,7 +139,9 @@ def copy_metafile(scene):
         '/' + gisenv['LOCATION_NAME'] + '/' + gisenv['MAPSET'] + '/cell_misc'
 
     # copy the metadata file -- Better: check if really copied!
-    print 'Will copy at: <%s>.\n' % CELL_MISC_DIR
+    message = 'Will copy at: <{cell_misc_directory}>.\n'
+    message = message.format(cell_misc_directory=CELL_MISC_DIR)
+    g.message(message)
     shutil.copy(metafile, CELL_MISC_DIR)
 
 
@@ -221,7 +226,7 @@ def set_timestamp(band, timestamp):
 
     # stamp bands
     run('r.timestamp', map=band, date=timestamp)
-    # grass.message( "| Time stamp " + timestamp_message)
+    # g.message( "| Time stamp " + timestamp_message)
 
 
 def import_geotiffs(scene):
@@ -233,7 +238,13 @@ def import_geotiffs(scene):
     """
 
     # communicate
-    grass.message('Importing... \n')  # why is it printed twice?
+    message = ('Importing... \n')  # why is it printed twice?
+
+    pretend = flags['p']
+    if pretend:
+        message = ('Dry run...\n')
+
+    g.message(message)
 
     # get time stamp
     timestamp = get_timestamp(scene)
@@ -257,7 +268,7 @@ def import_geotiffs(scene):
 
         # found a wrongly named *MTL.TIF file in LE71610432005160ASN00
         if ('MTL') in ffile:  # use grass.warning(_("...")?
-            grass.message(_("Found a wrongly named *MTL.TIF file!", flags='w'))
+            g.message(_("Found a wrongly named *MTL.TIF file!", flags='w'))
             grass.fatal(_("Please rename the extension to .txt"))
             break
 
@@ -273,12 +284,18 @@ def import_geotiffs(scene):
         else:
             band = int(name[-1:])
 
-        # communicate
-        grass.message('Band name: %s' % (name))
-        mapset = os.path.basename(scene)
-        grass.message('   %s -> %s @%s' % (file, name, mapset))
+        # communicate input band name
+        message = 'Band name: {name}'.format(name=name)
+        g.message(message)
 
-        pretend = flags['p']
+        # set mapset from scene name
+        mapset = os.path.basename(scene)
+
+        # communicate source and target
+        message = '   {filename} -> {name} @{mapset}'
+        message = message.format(filename=file, name=name, mapset=mapset)
+        g.message(message)
+
         if not pretend:
 
             # create Mapset of interest
@@ -297,20 +314,38 @@ def import_geotiffs(scene):
                         input=ffile, output=name, title='band %s' % band)
 
             else:
-                run('r.in.gdal', input=ffile, output=name, title='band %d' % band)
+                run('r.in.gdal', input=ffile, output=name,
+                        title='band {band}'.format(band=band))
 
             # set date & time
             set_timestamp(name,timestamp)
 
-    # copy metadata file (MTL)
-    copy_metafile(scene)
+        else:
+            run('r.in.gdal', flags='p',
+                input=ffile, output=name,
+                title='band {band}'.format(band=band))
+
+    if not pretend:
+        # copy metadata file (MTL)
+        copy_metafile(scene)
+
+        # communicate
+        message = 'Scene imported in Mapset @{mapset} '
+        message = message.format(mapset=mapset)
 
     # communicate
-    grass.message('Scene imported in %s' % mapset)
+    message = 'Scene will be imported in Mapset @{mapset} '
+    message = message.format(mapset=mapset)
+
+    # add timestamp related message to final message
+    timestamp_message = 'with the following timestamp: {timestamp}'
+    timestamp_message = timestamp_message.format(timestamp=timestamp)
+
     if options['timestamp']:
-        timestamp_message = "set manually"
-    timestamp_message = "retrieved from metadata"
-    grass.message('with timestamp %s' % timestamp)
+        timestamp_message = "(set manually)"
+
+    message += timestamp_message
+    g.message(message)
 
 
 def main():
@@ -329,14 +364,14 @@ def main():
 
         for scene in landsat_scenes:
             if 'tar.gz' in scene:
-                grass.message('Extracting files from tar.gz file')
+                g.message('Extracting files from tar.gz file')
                 extract_tgz(scene)
                 scene = scene.split('.tar.gz')[0]
 
                 import_geotiffs(scene)
 
                 if remove_untarred:
-                    grass.message('Removing directory %s' % scene)
+                    g.message('Removing directory %s' % scene)
                     shutil.rmtree(scene)
 
             else:
