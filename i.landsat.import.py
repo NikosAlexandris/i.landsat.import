@@ -217,7 +217,7 @@ def set_timestamp(band, timestamp):
 
         # r.timestamp does not tolerate single-digit minutes!
         if len(minutes.split('.')[0]) == 1:
-            minutes = '0' + seconds
+            minutes = '0' + minutes
 
         # r.timestamp does not tolerate single-digit seconds!
         if len(seconds.split('.')[0]) == 1:
