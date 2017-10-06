@@ -70,6 +70,7 @@ import sys
 import shutil
 import tarfile
 import glob
+import shlex
 import atexit
 import grass.script as grass
 from grass.pygrass.modules.shortcuts import general as g
@@ -144,6 +145,13 @@ def copy_metafile(scene):
     g.message(message)
     shutil.copy(metafile, CELL_MISC_DIR)
 
+# def add_leading_zeroes(real_number, n):
+#     """
+#     Add leading zeroes to floating point numbers
+#     Source: https://stackoverflow.com/a/7407943
+#     """
+#     bits = real_number.split('.')
+#     return '{integer}.{real}'.format(bits[0].zfill(2), bits[1])
 
 def get_timestamp(scene):
     """
@@ -193,7 +201,9 @@ def get_timestamp(scene):
                     # create hours, minutes, seconds in date_time dictionary
                     date_time['hours'] = format(int(time[0]), '02d')
                     date_time['minutes'] = format(int(time[1]), '02d')
-                    date_time['seconds'] = float(time[2])
+                    # date_time['seconds'] = float(time[2])
+                    date_time['seconds'] = float('{integer}.{real}'.format(integer = time[2].split('.')[0].zfill(2), real = time[2].split('.')[1]))
+                    # print "Seconds: {seconds}".format(seconds=date_time['seconds'])
 
         finally:
             metadata.close()
@@ -216,15 +226,21 @@ def set_timestamp(band, timestamp):
 
         # hours, minutes, seconds
         hours = str(timestamp['hours'])
+        # print "Hours: {hours}".format(hours=hours)
         minutes = str(timestamp['minutes'])
+        # print "Minutes: {minutes}".format(minutes=minutes)
         seconds = str(timestamp['seconds'])
+        # print "Seconds: {seconds}".format(seconds=seconds)
         hours_minutes_seconds = ':'.join((hours, minutes, seconds))
 
         # assembly the string
-        timestamp =' '.join((day_month_year, hours_minutes_seconds))
+        # timestamp = "'" + ' '.join((day_month_year, hours_minutes_seconds)) + "'"
+        timestamp = ' '.join((day_month_year, hours_minutes_seconds))
+        # timestamp = shlex.quotes(timestamp)
+        print "Timestamp: {timestamp}".format(timestamp=timestamp)
 
     # stamp bands
-    run('r.timestamp', map=band, date=timestamp)
+    run('r.timestamp', map=band, date=timestamp, verbose=True)
     # g.message( "| Time stamp " + timestamp_message)
 
 
