@@ -4,7 +4,7 @@ i.landsat.import
 ================
 
 *i.landsat.import* is a GRASS-GIS module that imports Landsat satellite imagery
-scenes in GRASS GIS' data base. It treats Landsat data of both forms, `tar.gz`
+scenes in GRASS GIS' data base. It treats Landsat scenes of both forms, `tar.gz`
 (packed and compressed) as well as (decompressed and unpacked) GeoTiFF files of
 a single scene that reside inside an independent directory. The module handles
 also multiple scenes. It imports all bands that pertain to a scene in one
