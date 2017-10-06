@@ -215,6 +215,10 @@ def set_timestamp(band, timestamp):
         minutes = str(timestamp['minutes'])
         seconds = str(timestamp['seconds'])
 
+        # r.timestamp does not tolerate single-digit minutes!
+        if len(minutes.split('.')[0]) == 1:
+            minutes = '0' + seconds
+
         # r.timestamp does not tolerate single-digit seconds!
         if len(seconds.split('.')[0]) == 1:
             seconds = '0' + seconds
@@ -248,6 +252,10 @@ def import_geotiffs(scene):
 
     # get time stamp
     timestamp = get_timestamp(scene)
+
+    # communicate input band name
+    message = 'Band name\tFilename\t\t\tTarget Mapset\n'
+    g.message(message)
 
     # loop over files inside a "Landsat" directory
     for file in os.listdir(scene):
@@ -284,15 +292,15 @@ def import_geotiffs(scene):
         else:
             band = int(name[-1:])
 
+
         # communicate input band name
-        message = 'Band name: {name}'.format(name=name)
-        g.message(message)
+        message = '{name}'.format(name=name)
 
         # set mapset from scene name
         mapset = os.path.basename(scene)
 
         # communicate source and target
-        message = '   {filename} -> {name} @{mapset}'
+        message += '\t\t{filename}\t@{mapset}\n'
         message = message.format(filename=file, name=name, mapset=mapset)
         g.message(message)
 
