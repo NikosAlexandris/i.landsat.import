@@ -179,6 +179,10 @@ def get_timestamp(scene):
                 # get Time
                 if ('SCENE_CENTER_TIME' in line):
 
+                    # remove " from detected line
+                    if('\"' in line):
+                        line = line.replace('\"', '')
+
                     # first, zero timezone if 'Z' is the last character
                     if line.endswith('Z'):
                         date_time['timezone'] = '+0000'
@@ -187,8 +191,8 @@ def get_timestamp(scene):
                     time = line.strip().split('=')[1].strip().translate(None, 'Z').split(':')
 
                     # create hours, minutes, seconds in date_time dictionary
-                    date_time['hours'] = int(time[0])
-                    date_time['minutes'] = int(time[1])
+                    date_time['hours'] = format(int(time[0]), '02d')
+                    date_time['minutes'] = format(int(time[1]), '02d')
                     date_time['seconds'] = float(time[2])
 
         finally:
@@ -199,6 +203,7 @@ def get_timestamp(scene):
 
 def set_timestamp(band, timestamp):
     """
+    Builds and sets the timestamp (as a string!) for a raster map
     """
 
     if isinstance(timestamp, dict):
@@ -207,26 +212,16 @@ def set_timestamp(band, timestamp):
         if ('-' in timestamp['date']):
             year, month, day = timestamp['date'].split('-')
         month = MONTHS[month]
-
-        dmy = ' '.join((day, month, year))
+        day_month_year = ' '.join((day, month, year))
 
         # hours, minutes, seconds
         hours = str(timestamp['hours'])
         minutes = str(timestamp['minutes'])
         seconds = str(timestamp['seconds'])
-
-        # r.timestamp does not tolerate single-digit minutes!
-        if len(minutes.split('.')[0]) == 1:
-            minutes = '0' + minutes
-
-        # r.timestamp does not tolerate single-digit seconds!
-        if len(seconds.split('.')[0]) == 1:
-            seconds = '0' + seconds
-
-        hrs = ':'.join((hours, minutes, seconds))
+        hours_minutes_seconds = ':'.join((hours, minutes, seconds))
 
         # assembly the string
-        timestamp =' '.join((dmy, hrs))
+        timestamp =' '.join((day_month_year, hours_minutes_seconds))
 
     # stamp bands
     run('r.timestamp', map=band, date=timestamp)
@@ -252,6 +247,7 @@ def import_geotiffs(scene):
 
     # get time stamp
     timestamp = get_timestamp(scene)
+    g.message("Detected timestamp: {timestamp}\n".format(timestamp=timestamp))
 
     # communicate input band name
     message = 'Band name\tFilename\t\t\tTarget Mapset\n'
