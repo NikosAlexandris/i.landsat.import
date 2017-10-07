@@ -35,8 +35,8 @@
 #%end
 
 #%flag
-#%  key: p
-#%  description: Pretend what *would* have been imported if -p weren't used.
+#%  key: l
+#%  description: List bands but do not import
 #%end
 
 #%option
@@ -45,6 +45,10 @@
 #% description: Directory containing one or multiple Landsat scenes (compressed tar.gz files)
 #% multiple: yes
 #% required: no
+#%end
+
+#%rules
+#% requires_all: -r, scene
 #%end
 
 #%option
@@ -70,7 +74,7 @@ import sys
 import shutil
 import tarfile
 import glob
-import shlex
+# import shlex
 import atexit
 import grass.script as grass
 from grass.pygrass.modules.shortcuts import general as g
@@ -80,6 +84,14 @@ MONTHS = {'01': 'jan', '02': 'feb', '03': 'mar', '04': 'apr', '05': 'may',
           '06': 'jun', '07': 'jul', '08': 'aug', '09': 'sep', '10': 'oct',
           '11': 'nov', '12': 'dec'}
 
+# environment variables
+gisenv = grass.gisenv()
+
+# path to "cell_misc"
+CELL_MISC_DIR = gisenv['GISDBASE'] + \
+          '/' + gisenv['LOCATION_NAME'] + \
+          '/' + gisenv['MAPSET'] + \
+          '/cell_misc'
 
 # helper functions
 def run(cmd, **kwargs):
@@ -88,24 +100,32 @@ def run(cmd, **kwargs):
     """
     grass.run_command(cmd, quiet=True, **kwargs)
 
+def import_raster(raster, name, band):
+    """
+    """
+    run('r.in.gdal', flags='o', input=raster, output=name, title='band {band}'.format(band=band))
+    pass
+
 
 def extract_tgz(tgz):
     """
     Decompress and unpack a .tgz file
     """
 
+    g.message('Extracting files from tar.gz file')
+
     # open tar.gz file in read mode
     tar = tarfile.TarFile.open(name=tgz, mode='r')
 
-    # create a directory with the scene's (base)name
+    # get the scene's (base)name
     tgz_base = os.path.basename(tgz).split('.tar.gz')[0]
 
-    # try to create a directory with the landsat's scene (base)name
+    # try to create a directory with the scene's (base)name
     # source: <http://stackoverflow.com/a/14364249/1172302>
     try:
         os.makedirs(tgz_base)
 
-    # if something went wrong, then raise error
+    # if something went wrong, raise an error
     except OSError:
         if not os.path.isdir(tgz_base):
             raise
@@ -114,44 +134,44 @@ def extract_tgz(tgz):
     tar.extractall(path=tgz_base)
 
 
-def get_metafile(scene):
+def get_metafile(scene, **kwargs):
     """
+    Get metadata MTL filename
     """
     metafile = glob.glob(scene + '/*MTL.txt')[0]
-    # g.message('\n | Metadata file: <%s>.' % metafile.split('/')[1])
-    # g.message('\nIdentified metadata file: <%s>.' % metafile)
+    message = '\n'
+    message += ('Scene\t\t\tMetafile\n\n')
+    message += ('{scene}\t{mtl}\n\n'.format(scene=scene, mtl=metafile))
+    g.message(message, **kwargs)
 
     return metafile
 
+def search_cell_misc():
+    """
+    To implement -- confirm existence of copied MTL in cell_misc instead of
+    saying "yes, it's copied" without checking
+    """
+    pass
 
-def copy_metafile(scene):
+def copy_metafile(metafile):
     """
     Copies the *MTL.txt metadata file in the cell_misc directory inside
     the Landsat scene's independent Mapset
     """
 
-    # get metadata file
-    metafile = get_metafile(scene)
-
-    # get environment variables & define path to "cell_misc"
-    gisenv = grass.gisenv()
-
-    CELL_MISC_DIR = gisenv['GISDBASE'] + \
-        '/' + gisenv['LOCATION_NAME'] + '/' + gisenv['MAPSET'] + '/cell_misc'
-
     # copy the metadata file -- Better: check if really copied!
-    message = 'Will copy at: <{cell_misc_directory}>.\n'
+    message = 'Meta file copied at <{cell_misc_directory}>.\n'
     message = message.format(cell_misc_directory=CELL_MISC_DIR)
     g.message(message)
     shutil.copy(metafile, CELL_MISC_DIR)
 
-# def add_leading_zeroes(real_number, n):
-#     """
-#     Add leading zeroes to floating point numbers
-#     Source: https://stackoverflow.com/a/7407943
-#     """
-#     bits = real_number.split('.')
-#     return '{integer}.{real}'.format(bits[0].zfill(2), bits[1])
+def add_leading_zeroes(real_number, n):
+     """
+     Add leading zeroes to floating point numbers
+     Source: https://stackoverflow.com/a/7407943
+     """
+     bits = real_number.split('.')
+     return '{integer}.{real}'.format(integer=bits[0].zfill(n), real=bits[1])
 
 def get_timestamp(scene):
     """
@@ -163,6 +183,7 @@ def get_timestamp(scene):
     # if set, get time stamp from options
     if options['timestamp']:
         date_time = options['timestamp']
+        timestamp_message = "(set manually)"
 
     else:
 
@@ -201,15 +222,25 @@ def get_timestamp(scene):
                     # create hours, minutes, seconds in date_time dictionary
                     date_time['hours'] = format(int(time[0]), '02d')
                     date_time['minutes'] = format(int(time[1]), '02d')
-                    # date_time['seconds'] = float(time[2])
-                    date_time['seconds'] = float('{integer}.{real}'.format(integer = time[2].split('.')[0].zfill(2), real = time[2].split('.')[1]))
-                    # print "Seconds: {seconds}".format(seconds=date_time['seconds'])
+                    date_time['seconds'] = add_leading_zeroes(time[2], 2) # float?
 
         finally:
             metadata.close()
 
     return date_time
 
+def print_timestamp(timestamp):
+    """
+    """
+    date = timestamp['date']
+    hours = str(timestamp['hours'])
+    minutes = str(timestamp['minutes'])
+    seconds = str(timestamp['seconds'])
+    timezone = timestamp['timezone']
+    time = ':'.join((hours, minutes, seconds))
+
+    message = 'Time\t\t\t\tDate\n\n{time} {timezone}\t\t{date}\n\n'
+    g.message(message.format(date=date, time=time, timezone=timezone))
 
 def set_timestamp(band, timestamp):
     """
@@ -226,25 +257,20 @@ def set_timestamp(band, timestamp):
 
         # hours, minutes, seconds
         hours = str(timestamp['hours'])
-        # print "Hours: {hours}".format(hours=hours)
         minutes = str(timestamp['minutes'])
-        # print "Minutes: {minutes}".format(minutes=minutes)
         seconds = str(timestamp['seconds'])
-        # print "Seconds: {seconds}".format(seconds=seconds)
         hours_minutes_seconds = ':'.join((hours, minutes, seconds))
 
         # assembly the string
-        # timestamp = "'" + ' '.join((day_month_year, hours_minutes_seconds)) + "'"
         timestamp = ' '.join((day_month_year, hours_minutes_seconds))
-        # timestamp = shlex.quotes(timestamp)
-        print "Timestamp: {timestamp}".format(timestamp=timestamp)
+        # timestamp = "'" + ' '.join((day_month_year, hours_minutes_seconds)) + "'"
+        # timestamp = shlex.quotes(timestamp)  # This is failing in my bash!
 
     # stamp bands
-    run('r.timestamp', map=band, date=timestamp, verbose=True)
-    # g.message( "| Time stamp " + timestamp_message)
+    run('r.timestamp', map=band, date=timestamp)
 
 
-def import_geotiffs(scene):
+def import_geotiffs(scene, list_only):
     """
     Imports all bands (GeoTIF format) of a Landsat scene be it Landsat 5,
     7 or 8.  All known naming conventions are respected, such as "VCID" and
@@ -252,21 +278,24 @@ def import_geotiffs(scene):
     respectively.
     """
 
-    # communicate
-    message = ('Importing... \n')  # why is it printed twice?
-
-    pretend = flags['p']
-    if pretend:
-        message = ('Dry run...\n')
-
-    g.message(message)
-
     # get time stamp
     timestamp = get_timestamp(scene)
-    g.message("Detected timestamp: {timestamp}\n".format(timestamp=timestamp))
+
+    # print it
+    print_timestamp(timestamp)
+
+    # set mapset from scene name
+    mapset = os.path.basename(scene)
+
+    # print target mapset
+    message = 'Target Mapset\t@{mapset}\n\n'.format(mapset=mapset)
+
+    # list but don't import
+    if list_only:
+        message = ('List of bands without importing\n\n')
 
     # communicate input band name
-    message = 'Band name\tFilename\t\t\tTarget Mapset\n'
+    message += 'Band\tFilename\n'
     g.message(message)
 
     # loop over files inside a "Landsat" directory
@@ -279,8 +308,8 @@ def import_geotiffs(scene):
         # use the full path name to the file
         ffile = os.path.join(scene, file)
 
-        # if correctly handled below, use the "any" instruction!
-        if ('QA') or ('VCID') in ffile:
+        # detect QA or VCID strings
+        if any(string in ffile for string in ('QA', 'VCID')):
             name = "".join((os.path.splitext(file)[0].split('_'))[1::2])
 
         else:
@@ -289,11 +318,14 @@ def import_geotiffs(scene):
         # found a wrongly named *MTL.TIF file in LE71610432005160ASN00
         if ('MTL') in ffile:  # use grass.warning(_("...")?
             g.message(_("Found a wrongly named *MTL.TIF file!", flags='w'))
-            grass.fatal(_("Please rename the extension to .txt"))
+            grass.fatal(_("Please, rename the extension to .txt and retry."))
             break
 
         elif ('QA') in ffile:
             band = name
+
+        elif len(name) == 3 and name[0] == 'B' and name[-1] == '0':
+            band = int(name[1:3])
 
         elif len(name) == 3 and name[-1] == '0':
             band = int(name[1:2])
@@ -304,19 +336,16 @@ def import_geotiffs(scene):
         else:
             band = int(name[-1:])
 
-
-        # communicate input band name
+        # # communicate input band name
         message = '{name}'.format(name=name)
-
-        # set mapset from scene name
-        mapset = os.path.basename(scene)
+        # g.message(message)
 
         # communicate source and target
-        message += '\t\t{filename}\t@{mapset}\n'
-        message = message.format(filename=file, name=name, mapset=mapset)
+        message += '\t{filename}\n'
+        message = message.format(filename=file)
         g.message(message)
 
-        if not pretend:
+        if not list_only:
 
             # create Mapset of interest
             run('g.mapset', flags='c', mapset=mapset, stderr=open(os.devnull, 'w'))
@@ -326,76 +355,64 @@ def import_geotiffs(scene):
 
                 override_projection = flags['o']
                 if override_projection:
-                    run('r.in.gdal', input=ffile, output=name,
-                        title='band %s' % band)
+                    run('r.in.gdal', flags='o',
+                            input=ffile, output=name,
+                            title='band {band}'.format(band=band))
 
                 else:
-                    run('r.in.gdal', flags='o',
-                        input=ffile, output=name, title='band %s' % band)
+                    run('r.in.gdal',
+                            input=ffile, output=name,
+                            title='band {band}'.format(band=band))
 
             else:
-                run('r.in.gdal', input=ffile, output=name,
+                run('r.in.gdal',
+                        input=ffile, output=name,
                         title='band {band}'.format(band=band))
 
             # set date & time
             set_timestamp(name,timestamp)
 
         else:
-            run('r.in.gdal', flags='p',
-                input=ffile, output=name,
-                title='band {band}'.format(band=band))
-
-    if not pretend:
-        # copy metadata file (MTL)
-        copy_metafile(scene)
-
-        # communicate
-        message = 'Scene imported in Mapset @{mapset} '
-        message = message.format(mapset=mapset)
-
-    # communicate
-    message = 'Scene will be imported in Mapset @{mapset} '
-    message = message.format(mapset=mapset)
-
-    # add timestamp related message to final message
-    timestamp_message = 'with the following timestamp: {timestamp}'
-    timestamp_message = timestamp_message.format(timestamp=timestamp)
-
-    if options['timestamp']:
-        timestamp_message = "(set manually)"
-
-    message += timestamp_message
-    g.message(message)
+            pass
 
 
 def main():
 
     # flags
     remove_untarred = flags['r']
+    list_only = flags['l']
+
+    # hot to force --v if -l instructed?
+    # env = os.environ.copy()
+    # if list_only:
+    #     env['GRASS_VERBOSE'] = '3'
 
     if options['pool']:
         pool = options['pool']
 
         for directory in filter(os.path.isdir, os.listdir(pool)):
-            import_geotiffs(directory)
+            import_geotiffs(directory, list_only)
 
     if options['scene']:
         landsat_scenes = options['scene'].split(',')
 
         for scene in landsat_scenes:
             if 'tar.gz' in scene:
-                g.message('Extracting files from tar.gz file')
                 extract_tgz(scene)
                 scene = scene.split('.tar.gz')[0]
-
-                import_geotiffs(scene)
+                import_geotiffs(scene, list_only)
 
                 if remove_untarred:
-                    g.message('Removing directory %s' % scene)
+                    g.message('Removing directory {scene}'.format(scene=scene))
                     shutil.rmtree(scene)
 
             else:
-                import_geotiffs(scene)
+                import_geotiffs(scene, list_only)
+
+    # copy metadata file (MTL)
+    if not list_only:
+        metafile = get_metafile(scene, quiet=True)
+        copy_metafile(metafile)
 
 
 if __name__ == "__main__":
