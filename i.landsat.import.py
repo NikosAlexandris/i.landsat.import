@@ -30,6 +30,11 @@
 #%end
 
 #%flag
+#%  key: s
+#%  description: Skip import if band exists and continue
+#%end
+
+#%flag
 #%  key: r
 #%  description: If input is a tar.gz file, remove unpacked scene directory after import completion
 #%end
@@ -37,6 +42,11 @@
 #%flag
 #%  key: l
 #%  description: List bands but do not import
+#%end
+
+#%flag
+#%  key: n
+#%  description: Number of scenes in pool
 #%end
 
 #%option
@@ -100,6 +110,21 @@ def run(cmd, **kwargs):
     """
     grass.run_command(cmd, quiet=True, **kwargs)
 
+def find_existing_band(band):
+    """
+    Check if band exists in the current mapset
+
+    Parameter "element": 'raster', 'raster_3d', 'vector'
+    """
+
+    result = grass.find_file(name=band, element='cell', mapset='.')
+    if result['file']:
+        grass.verbose(_("Band {band} exists".format(band=band)))
+        return True
+
+    else:
+        return False
+
 def import_raster(raster, name, band):
     """
     """
@@ -141,8 +166,10 @@ def get_metafile(scene, **kwargs):
     metafile = glob.glob(scene + '/*MTL.txt')[0]
     message = '\n'
     message += ('Scene\t\t\tMetafile\n\n')
-    message += ('{scene}\t{mtl}\n\n'.format(scene=scene, mtl=metafile))
-    g.message(message, **kwargs)
+    metafile_basename = os.path.basename(metafile)
+    scene_basename = os.path.basename(scene)
+    message += ('{scene}\t{mtl}\n\n'.format(scene=scene_basename, mtl=metafile_basename))
+    g.message(_(message, **kwargs))
 
     return metafile
 
@@ -299,29 +326,29 @@ def import_geotiffs(scene, list_only):
     g.message(message)
 
     # loop over files inside a "Landsat" directory
-    for file in os.listdir(scene):
+    for filename in os.listdir(scene):
 
         # if not GeoTIFF, keep on working
-        if os.path.splitext(file)[-1] != '.TIF':
+        if os.path.splitext(filename)[-1] != '.TIF':
             continue
 
         # use the full path name to the file
-        ffile = os.path.join(scene, file)
+        absolute_filename = os.path.join(scene, filename)
 
         # detect QA or VCID strings
-        if any(string in ffile for string in ('QA', 'VCID')):
-            name = "".join((os.path.splitext(file)[0].split('_'))[1::2])
+        if any(string in absolute_filename for string in ('QA', 'VCID')):
+            name = "".join((os.path.splitext(absolute_filename)[0].split('_'))[1::2])
 
         else:
-            name = os.path.splitext(file)[0].split('_')[-1]
+            name = os.path.splitext(filename)[0].split('_')[-1]
 
         # found a wrongly named *MTL.TIF file in LE71610432005160ASN00
-        if ('MTL') in ffile:  # use grass.warning(_("...")?
+        if ('MTL') in absolute_filename:  # use grass.warning(_("...")?
             g.message(_("Found a wrongly named *MTL.TIF file!", flags='w'))
             grass.fatal(_("Please, rename the extension to .txt and retry."))
             break
 
-        elif ('QA') in ffile:
+        elif ('QA') in absolute_filename:
             band = name
 
         elif len(name) == 3 and name[0] == 'B' and name[-1] == '0':
@@ -342,7 +369,7 @@ def import_geotiffs(scene, list_only):
 
         # communicate source and target
         message += '\t{filename}\n'
-        message = message.format(filename=file)
+        message = message.format(filename=filename)
         g.message(message)
 
         if not list_only:
@@ -350,24 +377,42 @@ def import_geotiffs(scene, list_only):
             # create Mapset of interest
             run('g.mapset', flags='c', mapset=mapset, stderr=open(os.devnull, 'w'))
 
-            # import bands
+            # import BQA band
             if isinstance(band, str):
 
                 override_projection = flags['o']
                 if override_projection:
                     run('r.in.gdal', flags='o',
-                            input=ffile, output=name,
+                            input=absolute_filename, output=name,
                             title='band {band}'.format(band=band))
 
                 else:
-                    run('r.in.gdal',
-                            input=ffile, output=name,
+
+                    skip_import=flags['s']
+                    if (skip_import and find_existing_band(name)):
+
+                        g.message(_(">>> Skipping import of already existing band {b}".format(b=band)))
+                        pass
+
+                    else:
+                        run('r.in.gdal',
+                            input=absolute_filename, output=name,
                             title='band {band}'.format(band=band))
 
+            # import band
             else:
-                run('r.in.gdal',
-                        input=ffile, output=name,
-                        title='band {band}'.format(band=band))
+
+                skip_import=flags['s']
+
+                if (skip_import and find_existing_band(name)):
+
+                    g.message(_(">>> Skipping import of already existing band {b}".format(b=band)))
+                    pass
+
+                else:
+                    run('r.in.gdal',
+                            input=absolute_filename, output=name,
+                            title='band {band}'.format(band=band))
 
             # set date & time
             set_timestamp(name,timestamp)
@@ -381,6 +426,7 @@ def main():
     # flags
     remove_untarred = flags['r']
     list_only = flags['l']
+    number_of_scenes = flags['n']
 
     # hot to force --v if -l instructed?
     # env = os.environ.copy()
@@ -389,9 +435,17 @@ def main():
 
     if options['pool']:
         pool = options['pool']
+        scenes = [x[0] for x in os.walk(pool)][1:]
+        g.message(_("Number of scenes in pool: {n}".format(n=len(scenes))))
 
-        for directory in filter(os.path.isdir, os.listdir(pool)):
-            import_geotiffs(directory, list_only)
+        if not number_of_scenes:
+            for scene in scenes:
+                import_geotiffs(scene, list_only)
+
+        # # copy metadata file (MTL)
+        # if not list_only:
+        #     metafile = get_metafile(directory, quiet=True)
+        #     copy_metafile(metafile)
 
     if options['scene']:
         landsat_scenes = options['scene'].split(',')
@@ -409,10 +463,10 @@ def main():
             else:
                 import_geotiffs(scene, list_only)
 
-    # copy metadata file (MTL)
-    if not list_only:
-        metafile = get_metafile(scene, quiet=True)
-        copy_metafile(metafile)
+        # copy metadata file (MTL)
+        if not list_only:
+            metafile = get_metafile(scene, quiet=True)
+            copy_metafile(metafile)
 
 
 if __name__ == "__main__":
