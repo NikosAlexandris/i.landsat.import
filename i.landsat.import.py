@@ -31,17 +31,22 @@
 
 #%flag
 #%  key: s
-#%  description: Skip import if band exists and continue
+#%  description: Skip import and continue if band exists
 #%end
 
 #%flag
 #%  key: r
-#%  description: If input is a tar.gz file, remove unpacked scene directory after import completion
+#%  description: Remove unpacked scene directory after import if source is a tar.gz file
 #%end
 
 #%flag
 #%  key: l
 #%  description: List bands but do not import
+#%end
+
+#%flag
+#%  key: t
+#%  description: t.register compliant list of scene names and their timestamp, one per line
 #%end
 
 #%flag
@@ -76,6 +81,15 @@
 #% label: Manual definition of a time stamp
 #% description: Timestamp for bands of a Landsat scene
 #% required: no
+#%end
+
+#%option
+#%  key: tgis
+#%  key_desc:
+#%  label: File for t.register
+#%  description: Scene names and their timestamp
+#%  multiple: no
+#%  required: no
 #%end
 
 # required librairies
@@ -159,17 +173,20 @@ def extract_tgz(tgz):
     tar.extractall(path=tgz_base)
 
 
-def get_metafile(scene, **kwargs):
+def get_metafile(scene, tgis, **kwargs):
     """
     Get metadata MTL filename
     """
+
     metafile = glob.glob(scene + '/*MTL.txt')[0]
-    message = '\n'
-    message += ('Scene\t\t\tMetafile\n\n')
-    metafile_basename = os.path.basename(metafile)
-    scene_basename = os.path.basename(scene)
-    message += ('{scene}\t{mtl}\n\n'.format(scene=scene_basename, mtl=metafile_basename))
-    g.message(_(message, **kwargs))
+
+    if not tgis:
+        message = '\n'
+        message += ('Scene\t\t\tMetafile\n\n')
+        metafile_basename = os.path.basename(metafile)
+        scene_basename = os.path.basename(scene)
+        message += ('{scene}\t{mtl}\n\n'.format(scene=scene_basename, mtl=metafile_basename))
+        g.message(_(message, **kwargs))
 
     return metafile
 
@@ -200,7 +217,7 @@ def add_leading_zeroes(real_number, n):
      bits = real_number.split('.')
      return '{integer}.{real}'.format(integer=bits[0].zfill(n), real=bits[1])
 
-def get_timestamp(scene):
+def get_timestamp(scene, tgis):
     """
     Scope:  Retrieve timestamp of a Landsat scene
     Input:  Metadata *MTL.txt file
@@ -215,7 +232,7 @@ def get_timestamp(scene):
     else:
 
         # get metadata file
-        metafile = get_metafile(scene)
+        metafile = get_metafile(scene, tgis)
 
         date_time = dict()
 
@@ -256,7 +273,7 @@ def get_timestamp(scene):
 
     return date_time
 
-def print_timestamp(timestamp):
+def print_timestamp(scene, timestamp, tgis=False):
     """
     """
     date = timestamp['date']
@@ -266,7 +283,14 @@ def print_timestamp(timestamp):
     timezone = timestamp['timezone']
     time = ':'.join((hours, minutes, seconds))
 
-    message = 'Time\t\t\t\tDate\n\n{time} {timezone}\t\t{date}\n\n'
+    message = 'Time\t\t\tDate\n\n{time} {timezone}\t{date}\n\n'
+
+    # if -t requested
+    if tgis:
+
+        # timezone = timezone.replace('+', '')
+        message = '{scene}<Suffix>|{date} {time} {timezone}'.format(date=date, scene=scene, time=time, timezone=timezone)
+
     g.message(message.format(date=date, time=time, timezone=timezone))
 
 def set_timestamp(band, timestamp):
@@ -279,25 +303,30 @@ def set_timestamp(band, timestamp):
         # year, month, day
         if ('-' in timestamp['date']):
             year, month, day = timestamp['date'].split('-')
+
+        # else, if not ('-' in timestamp['date']): what?
+
         month = MONTHS[month]
+
+        # assembly
         day_month_year = ' '.join((day, month, year))
 
         # hours, minutes, seconds
         hours = str(timestamp['hours'])
         minutes = str(timestamp['minutes'])
         seconds = str(timestamp['seconds'])
+
+        # assembly
         hours_minutes_seconds = ':'.join((hours, minutes, seconds))
 
         # assembly the string
         timestamp = ' '.join((day_month_year, hours_minutes_seconds))
-        # timestamp = "'" + ' '.join((day_month_year, hours_minutes_seconds)) + "'"
         # timestamp = shlex.quotes(timestamp)  # This is failing in my bash!
 
     # stamp bands
     run('r.timestamp', map=band, date=timestamp)
 
-
-def import_geotiffs(scene, list_only):
+def import_geotiffs(scene, list_only, tgis=False):
     """
     Imports all bands (GeoTIF format) of a Landsat scene be it Landsat 5,
     7 or 8.  All known naming conventions are respected, such as "VCID" and
@@ -306,24 +335,28 @@ def import_geotiffs(scene, list_only):
     """
 
     # get time stamp
-    timestamp = get_timestamp(scene)
+    timestamp = get_timestamp(scene, tgis)
 
     # print it
-    print_timestamp(timestamp)
+    print_timestamp(os.path.basename(scene), timestamp, tgis)
 
     # set mapset from scene name
     mapset = os.path.basename(scene)
 
-    # print target mapset
-    message = 'Target Mapset\t@{mapset}\n\n'.format(mapset=mapset)
+    message = str()
 
-    # list but don't import
+    # print target mapset
+    if not tgis:
+        message = 'Target Mapset\t@{mapset}\n\n'.format(mapset=mapset)
+
     if list_only:
         message = ('List of bands without importing\n\n')
+    print "GRASS_VERBOSE:", os.environ['GRASS_VERBOSE']
 
     # communicate input band name
-    message += 'Band\tFilename\n'
-    g.message(message)
+    if not tgis:
+        message += 'Band\tFilename\n'
+        g.message(message)
 
     # loop over files inside a "Landsat" directory
     for filename in os.listdir(scene):
@@ -363,16 +396,21 @@ def import_geotiffs(scene, list_only):
         else:
             band = int(name[-1:])
 
-        # # communicate input band name
-        message = '{name}'.format(name=name)
-        # g.message(message)
 
-        # communicate source and target
-        message += '\t{filename}\n'
-        message = message.format(filename=filename)
-        g.message(message)
+        if not tgis:
+            # # communicate input band name
+            message = '{name}'.format(name=name)
+            # g.message(message)
 
-        if not list_only:
+            # communicate source
+            message += '\t{filename}\n'
+            message = message.format(filename=filename)
+            g.message(message)
+
+        if not any(x for x in (list_only, tgis)):
+
+            # verbosity?
+            g.message(_('Importing...', flags='v')
 
             # create Mapset of interest
             run('g.mapset', flags='c', mapset=mapset, stderr=open(os.devnull, 'w'))
@@ -427,25 +465,22 @@ def main():
     remove_untarred = flags['r']
     list_only = flags['l']
     number_of_scenes = flags['n']
+    temporal_register = flags['t']
 
-    # hot to force --v if -l instructed?
-    # env = os.environ.copy()
-    # if list_only:
-    #     env['GRASS_VERBOSE'] = '3'
+
+    if list_only:  # don't import
+        os.environ['GRASS_VERBOSE'] = '3'
 
     if options['pool']:
         pool = options['pool']
         scenes = [x[0] for x in os.walk(pool)][1:]
-        g.message(_("Number of scenes in pool: {n}".format(n=len(scenes))))
 
-        if not number_of_scenes:
+        if number_of_scenes:
+            g.message(_("Number of scenes in pool: {n}".format(n=len(scenes))))
+
+        else:
             for scene in scenes:
-                import_geotiffs(scene, list_only)
-
-        # # copy metadata file (MTL)
-        # if not list_only:
-        #     metafile = get_metafile(directory, quiet=True)
-        #     copy_metafile(metafile)
+                import_geotiffs(scene, list_only, temporal_register)
 
     if options['scene']:
         landsat_scenes = options['scene'].split(',')
@@ -454,19 +489,18 @@ def main():
             if 'tar.gz' in scene:
                 extract_tgz(scene)
                 scene = scene.split('.tar.gz')[0]
-                import_geotiffs(scene, list_only)
 
-                if remove_untarred:
-                    g.message('Removing directory {scene}'.format(scene=scene))
-                    shutil.rmtree(scene)
+            # import
+            import_geotiffs(scene, list_only, temporal_register)
 
-            else:
-                import_geotiffs(scene, list_only)
+            if remove_untarred:
+                g.message('Removing unpacked source directory {scene}'.format(scene=scene))
+                shutil.rmtree(scene)
 
-        # copy metadata file (MTL)
-        if not list_only:
-            metafile = get_metafile(scene, quiet=True)
-            copy_metafile(metafile)
+    # copy metadata file (MTL)
+    if not list_only and not temporal_register:
+        metafile = get_metafile(scene, temporal_register, quiet=True)
+        copy_metafile(metafile)
 
 
 if __name__ == "__main__":
