@@ -1,4 +1,4 @@
-Work in progress
+*Work in progress*
 
 i.landsat.import
 ================
@@ -22,11 +22,25 @@ Notes
 Examples
 ========
 
-To add...
+To list all bands (and their GeoTiFF filenames), 
+```
+i.landsat.import pool=landsat_scenes -l
+```
+
+To derive a list of scenes (with a prefix --**To Do**--) and a valid TGIS timestamp (to use
+with `t.register`):
+```
+i.landsat.import pool=landsat_scenes -t
+```
+
+And more to add...
 
 To Do
 =====
 
+- Deduplicate code
+- Test for range of input date, time, timezone
+- Test if MTL file already exists in cell_misc
 - What other meta can be transferred from the MTL file?
 
 Sources
