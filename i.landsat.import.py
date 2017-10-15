@@ -63,6 +63,12 @@
 #%  description: Number of scenes in pool
 #%end
 
+#%flag
+#%  key: 1
+#%  description: Copy all scenes in one Mapset
+#%end
+
+
 #%option
 #% key: scene
 #% key_desc: name
@@ -81,6 +87,18 @@
 #% description: Directory containing multiple decompressed Landsat scenes as independent directories
 #% multiple: no
 #% required: no
+#%end
+
+#%option
+#% key: mapset
+#% key_desc: name
+#% description: Mapaset name to import all scenes in
+#% multiple: no
+#% required: no
+#%end
+
+#%rules
+#% collective: -1, mapset
 #%end
 
 #%option
@@ -127,6 +145,15 @@ from grass.pygrass.modules.shortcuts import raster as r
 MONTHS = {'01': 'jan', '02': 'feb', '03': 'mar', '04': 'apr', '05': 'may',
           '06': 'jun', '07': 'jul', '08': 'aug', '09': 'sep', '10': 'oct',
           '11': 'nov', '12': 'dec'}
+
+DATE_STRINGS = ['DATE_ACQUIRED', 'ACQUISITION_DATE']
+TIME_STRINGS = ['SCENE_CENTER_TIME', 'SCENE_CENTER_SCAN_TIME']
+ZERO_TIMEZONE = '+0000'
+GRASS_VERBOSITY_LELVEL_3 = '3'
+GEOTIFF_EXTENSION = '.TIF'
+IMAGE_QUALITY_STRINGS = ['QA', 'VCID']
+QA_STRING = 'QA'
+MTL_STRING = 'MTL'
 
 # environment variables
 gisenv = grass.gisenv()
@@ -195,38 +222,54 @@ def get_metafile(scene, tgis):
     metafile_basename = os.path.basename(metafile)
     scene_basename = os.path.basename(scene)
 
-    if not tgis:
-        message = '\n'
-        message += ('Scene\t\t\tMetafile\n\n')
-        message += ('{s}\t{mtl}\n\n'.format(s=scene_basename, mtl=metafile_basename))
-        g.message(_(message))
+    # if not tgis:
+    #     message = '\n'
+    #     message += ('Scene\t\t\tMetafile\n\n')
+    #     message += ('{s}\t{mtl}\n\n'.format(s=scene_basename, mtl=metafile_basename))
+    #     g.message(_(message))
 
     return metafile
 
-def is_mtl_in_cell_misc():
+def is_mtl_in_cell_misc(scene):
     """
     To implement -- confirm existence of copied MTL in cell_misc instead of
     saying "yes, it's copied" without checking
     """
-    metafile = glob.glob(scene + '/*MTL.txt')[0]
-    if metafile != '':
+    globbing = glob.glob(CELL_MISC_DIR + '/' + scene + '_MTL.txt')
+
+    if not globbing:
         return False
+    
     else:
         return True
 
-def copy_mtl_in_cell_misc(scene, tgis):
+def copy_mtl_in_cell_misc(scene, tgis, copy_mtl=True) :
     """
     Copies the *MTL.txt metadata file in the cell_misc directory inside
     the Landsat scene's independent Mapset
     """
 
-    metafile = get_metafile(scene, tgis)
+    if is_mtl_in_cell_misc(scene):
+        g.message(_('   MTL file already exists in /cell_misc'))
+        pass
 
-    # copy the metadata file -- Better: check if really copied!
-    message = 'Meta file copied at <{cell_misc_directory}>.\n'
-    message = message.format(cell_misc_directory=CELL_MISC_DIR)
+    else:
+
+        if copy_mtl:
+
+            metafile = get_metafile(scene, tgis)
+
+            # copy the metadata file -- Better: check if really copied!
+            message = '   MTL file copied at <{cell_misc_directory}>.'
+            message = message.format(cell_misc_directory=CELL_MISC_DIR)
+            g.message(_(message))
+            shutil.copy(metafile, CELL_MISC_DIR)
+
+        else:
+            g.message(_('   MTL not transferred under /cell_misc'))
+
+    message = "-------------------------------------------------------------------------------\n"
     g.message(_(message))
-    shutil.copy(metafile, CELL_MISC_DIR)
 
 def add_leading_zeroes(real_number, n):
      """
@@ -265,11 +308,11 @@ def get_timestamp(scene, tgis):
                     continue
 
                 # get Date
-                if any(x in line for x in ('DATE_ACQUIRED', 'ACQUISITION_DATE')):
+                if any(x in line for x in DATE_STRINGS):
                     date_time['date'] = line.strip().split('=')[1].strip()
 
                 # get Time
-                if ('SCENE_CENTER_TIME' in line):
+                if any(x in line for x in TIME_STRINGS):
 
                     # remove " from detected line
                     if('\"' in line):
@@ -277,7 +320,7 @@ def get_timestamp(scene, tgis):
 
                     # first, zero timezone if 'Z' is the last character
                     if line.endswith('Z'):
-                        date_time['timezone'] = '+0000'
+                        date_time['timezone'] = ZERO_TIMEZONE
 
                     # remove 'Z' and split the string before & after ':'
                     time = line.strip().split('=')[1].strip().translate(None, 'Z').split(':')
@@ -308,7 +351,7 @@ def print_timestamp(scene, timestamp, tgis=False):
     if tgis:
 
         # verbose if -t instructed
-        os.environ['GRASS_VERBOSE'] = '3'
+        os.environ['GRASS_VERBOSE'] = GRASS_VERBOSITY_LELVEL_3
 
         # timezone = timezone.replace('+', '')
         message = '{s}<Suffix>|{d} {t} {tz}'.format(s=scene, d=date, t=time, tz=timezone)
@@ -349,7 +392,7 @@ def set_timestamp(band, timestamp):
     run('r.timestamp', map=band, date=timestamp)
 
 
-def import_geotiffs(scene, list_only, tgis = False):
+def import_geotiffs(scene, one_mapset, list_only, tgis = False):
     """
     Imports all bands (GeoTIF format) of a Landsat scene be it Landsat 5,
     7 or 8.  All known naming conventions are respected, such as "VCID" and
@@ -357,20 +400,21 @@ def import_geotiffs(scene, list_only, tgis = False):
     respectively.
     """
 
-    # get time stamp
     timestamp = get_timestamp(scene, tgis)
-
-    # print it
     print_timestamp(os.path.basename(scene), timestamp, tgis)
 
-    # set mapset from scene name
-    mapset = os.path.basename(scene)
+    # if one mapset requested
+    if one_mapset:
+        mapset = options['mapset']
 
-    # a string holder
-    message = str()
+    else:
+        # set mapset from scene name
+        mapset = os.path.basename(scene)
+
+    message = str()  # a string holder
 
     # print target mapset
-    if not tgis:
+    if not any(x for x in (list_only, tgis)):
         message = 'Target Mapset\t@{mapset}\n\n'.format(mapset=mapset)
 
     # communicate input band name
@@ -382,26 +426,27 @@ def import_geotiffs(scene, list_only, tgis = False):
     for filename in os.listdir(scene):
 
         # if not GeoTIFF, keep on working
-        if os.path.splitext(filename)[-1] != '.TIF':
+        if os.path.splitext(filename)[-1] != GEOTIFF_EXTENSION:
             continue
 
         # use the full path name to the file
         absolute_filename = os.path.join(scene, filename)
 
-        # detect QA or VCID strings
-        if any(string in absolute_filename for string in ('QA', 'VCID')):
+        # detect image quality strings in filenames
+        if any(string in absolute_filename for string in IMAGE_QUALITY_STRINGS):
             name = "".join((os.path.splitext(absolute_filename)[0].split('_'))[1::2])
 
         else:
             name = os.path.splitext(filename)[0].split('_')[-1]
 
         # found a wrongly named *MTL.TIF file in LE71610432005160ASN00
-        if ('MTL') in absolute_filename:  # use grass.warning(_("...")?
-            g.message(_("Found a wrongly named *MTL.TIF file!", flags='w'))
-            grass.fatal(_("Please, rename the extension to .txt and retry."))
+        if MTL_STRING in absolute_filename:  # use grass.warning(_("...")?
+            message_fatal = "Detected an MTL file with the .TIF extension!"
+            message_fatal += "\nPlease, rename the extension to .txt and retry."
+            grass.fatal(_(message_fatal))
             break
 
-        elif ('QA') in absolute_filename:
+        elif (QA_STRING) in absolute_filename:
             band = name
 
         elif len(name) == 3 and name[0] == 'B' and name[-1] == '0':
@@ -416,87 +461,83 @@ def import_geotiffs(scene, list_only, tgis = False):
         else:
             band = int(name[-1:])
 
-        band_title = 'band {band}'.format(band = band)
 
-        # message for skipping import
-        message_skipping = '   >>> Band {b} already exists. Skipping import!'.format(b=band)
+        band_title = 'band {band}'.format(band = band)
 
         if not tgis:
 
             # communicate input band and source file name
             message = '{name}'.format(name = name)
-            message += '\t{filename}'
-            message = message.format(filename = filename)
-            g.message(_(message))
+            message += '\t{filename}'.format(filename = filename)
+            if not skip_import:
+                g.message(_(message))
+
+            else:
+                # message for skipping import
+                message_skipping = '\t>>>\tAlready exists! '.format(b=band)
+                message_skipping += 'Skipping import.'
+
 
         if not any(x for x in (list_only, tgis)):
 
-            # create Mapset of interest
+            # create Mapset of interest, if it doesn't exist
             run('g.mapset', flags = 'c', mapset = mapset, stderr = open(os.devnull, 'w'))
 
-################################################################################
+            # is one Mapset requested, prefix raster map names with scene id
+            if one_mapset:
+                name = scene + '_' + name
 
-            # import BQA band
-            if isinstance(band, str):
+            # if isinstance(band, str):
+            #     print '"Band" {s} is a string!'.format(s=band)
 
+            if (skip_import and find_existing_band(name)):
+
+                message_skipping = message + message_skipping
+                g.message(_(message_skipping))
+                pass
+
+            else:
+                
                 if override_projection:
 
                     r.in_gdal(flags='o',
-                            input = absolute_filename,
-                            output = name,
-                            title = band_title)
-
-                else:
-
-                    if (skip_import and find_existing_band(name)):
-
-                        g.message(_(message_skipping))
-                        pass
-
-                    else:
-
-                        r.in_gdal(input = absolute_filename,
-                                  output = name,
-                                  title = band_title)
-
-            # import band
-            else:
-
-                if (skip_import and find_existing_band(name)):
-
-                    g.message(_(message_skipping))
-                    pass
+                        input = absolute_filename,
+                        output = name,
+                        title = band_title)
 
                 else:
 
                     r.in_gdal(input = absolute_filename,
-                              output = name,
-                              title = band_title)
+                                output = name,
+                                title = band_title)
 
-################################################################################
-
-            # set date & time
-            set_timestamp(name, timestamp)
+                # set date & time
+                set_timestamp(name, timestamp)
 
         else:
             pass
 
+    if not tgis:
+        message = "-------------------------------------------------------------------------------"
+        g.message(_(message))
+
     # copy MTL
     if not list_only and not tgis:
-        copy_mtl_in_cell_misc(scene, tgis)
+        copy_mtl_in_cell_misc(scene, tgis, copy_mtl)
 
 def main():
 
-    global skip_import, override_projection
+    global copy_mtl, skip_import, override_projection
 
     # flags
-    do_not_copy_mtl = flags['m']
+    copy_mtl = not flags['m']
     override_projection = flags['o']
     skip_import = flags['s']
     remove_untarred = flags['r']
     list_only = flags['l']
     number_of_scenes = flags['n']
     tgis = flags['t']
+    one_mapset = flags['1']
 
     if list_only:  # don't import
         os.environ['GRASS_VERBOSE'] = '3'
@@ -512,11 +553,11 @@ def main():
         scenes = [x[0] for x in os.walk(pool)][1:]
 
         if number_of_scenes:
-            g.message(_("Number of scenes in pool: {n}".format(n = len(scenes))))
+            g.message(_('Number of scenes in pool: {n}'.format(n = len(scenes))))
 
         else:
             for scene in scenes:
-                import_geotiffs(scene, list_only, tgis)
+                import_geotiffs(scene, one_mapset, list_only, tgis)
 
     if options['scene']:
         landsat_scenes = options['scene'].split(',')
@@ -527,7 +568,7 @@ def main():
                 scene = scene.split('.tar.gz')[0]
 
             # import
-            import_geotiffs(scene, list_only, tgis)
+            import_geotiffs(scene, one_mapset, list_only, tgis)
 
             if remove_untarred:
                 message = 'Removing unpacked source directory {s}'.format(s = scene)
