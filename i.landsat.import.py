@@ -164,6 +164,16 @@ CELL_MISC_DIR = gisenv['GISDBASE'] + \
           '/' + gisenv['MAPSET'] + \
           '/cell_misc'
 
+def get_path_to_cell_misc(scene):
+    """
+    """
+    mapset = os.path.basename(scene)
+    path_to_cell_misc = gisenv['GISDBASE'] + \
+          '/' + gisenv['LOCATION_NAME'] + \
+          '/' + mapset + \
+          '/cell_misc'
+    return path_to_cell_misc
+
 # helper functions
 def run(cmd, **kwargs):
     """
@@ -249,6 +259,8 @@ def copy_mtl_in_cell_misc(scene, tgis, copy_mtl=True) :
     the Landsat scene's independent Mapset
     """
 
+    path_to_cell_misc = get_path_to_cell_misc(scene)
+
     if is_mtl_in_cell_misc(scene):
         g.message(_('   MTL file already exists in /cell_misc'))
         pass
@@ -260,10 +272,10 @@ def copy_mtl_in_cell_misc(scene, tgis, copy_mtl=True) :
             metafile = get_metafile(scene, tgis)
 
             # copy the metadata file -- Better: check if really copied!
-            message = '   MTL file copied at <{cell_misc_directory}>.'
-            message = message.format(cell_misc_directory=CELL_MISC_DIR)
+            message = '   MTL file copied at <{directory}>.'
+            message = message.format(directory=path_to_cell_misc)
             g.message(_(message))
-            shutil.copy(metafile, CELL_MISC_DIR)
+            shutil.copy(metafile, path_to_cell_misc)
 
         else:
             g.message(_('   MTL not transferred under /cell_misc'))
