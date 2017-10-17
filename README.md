@@ -27,8 +27,8 @@ Examples
 
 ## Single scenes
 
-Assuming we have beforehand the scene LC81840332014146LGN00 (unpacked and
-decompressed), let's list basic metadata and bands of a scene
+Assuming we have beforehand the scene LC81840332014146LGN00 (decompressed and
+unpacked), let's list basic metadata and bands of a scene
 ```
 i.landsat.import -l LC81840332014146LGN00
 ```
@@ -48,8 +48,13 @@ from the module to not copy the MTL file under `cell_misc`
 i.landsat.import -m LC81840332014146LGN00
 ```
 
+By the way, the module will only create a new Mapset, named after the directory
+that contains the requested scene. In this way, re-running the same command
+will skip recreating an existing Mapset.
+
 If we decide to copy afterwards the MTL file, or, even, if we somehow have
 removed one of the bands, the module will skip re-importing existing bands.
+
 Expectedly, repeating the previous command `i.landsat.import -m
 LC81840332014146LGN00`, will break and complaing about existing bands. Using
 the -s flag, the module will skip existing bands
@@ -61,14 +66,14 @@ i.landsat.import LC81840332014146LGN00 -s --v
 
 ### In independent Mapsets
 
-We import both bands in one step, each in its own Mapset. For this example, the
+We import both scenes in one step, each in its own Mapset. For this example, the
 command
 ```
 i.landsat.import scene=LC81840332014146LGN00,LC81840332014226LGN00 --v
 ```
 will fail at first since we have already imported the first scene. We may
-remove it and re-import everthing. Or, we may use the -s flag to skip existing
-material
+remove the respective Mapset and and re-import everything. Or, we may use the
+-s flag to skip existing material
 ```
 i.landsat.import scene=LC81840332014146LGN00,LC81840332014226LGN00 --v -s
 ```
