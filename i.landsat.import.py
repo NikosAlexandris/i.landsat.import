@@ -25,7 +25,7 @@
 #%end
 
 #%flag
-#%  key: m
+#%  key: c
 #%  description: Do not copy the metatada file in GRASS' data base
 #%end
 
@@ -52,6 +52,11 @@
 #%flag
 #%  key: t
 #%  description: t.register compliant list of scene names and their timestamp, one per line
+#%end
+
+#%flag
+#%  key: f
+#%  description: Force time-stamping. Useful for imported bands lacking a timestamp.
 #%end
 
 #%rules
@@ -357,7 +362,7 @@ def print_timestamp(scene, timestamp, tgis=False):
     timezone = timestamp['timezone']
     time = ':'.join((hours, minutes, seconds))
 
-    message = 'Time\t\t\tDate\n\n{time} {timezone}\t{date}\n\n'
+    message = 'Date\t\tTime\n\n{date}\t{time} {timezone}\n\n'
 
     # if -t requested
     if tgis:
@@ -402,7 +407,6 @@ def set_timestamp(band, timestamp):
 
     # stamp bands
     run('r.timestamp', map=band, date=timestamp)
-
 
 def import_geotiffs(scene, one_mapset, list_only, tgis = False):
     """
@@ -504,24 +508,28 @@ def import_geotiffs(scene, one_mapset, list_only, tgis = False):
 
             if (skip_import and find_existing_band(name)):
 
+                if force_timestamping:
+                    set_timestamp(name, timestamp)
+                    g.message(_('Forced timestamping for {b}'.format(b=name)))
+
                 message_skipping = message + message_skipping
                 g.message(_(message_skipping))
                 pass
 
             else:
-                
+
                 if override_projection:
 
                     r.in_gdal(flags='o',
-                        input = absolute_filename,
-                        output = name,
-                        title = band_title)
+                            input = absolute_filename,
+                            output = name,
+                            title = band_title)
 
                 else:
 
                     r.in_gdal(input = absolute_filename,
-                                output = name,
-                                title = band_title)
+                            output = name,
+                            title = band_title)
 
                 # set date & time
                 set_timestamp(name, timestamp)
@@ -539,16 +547,17 @@ def import_geotiffs(scene, one_mapset, list_only, tgis = False):
 
 def main():
 
-    global copy_mtl, skip_import, override_projection
+    global copy_mtl, skip_import, override_projection, force_timestamping
 
     # flags
-    copy_mtl = not flags['m']
+    copy_mtl = not flags['c']
     override_projection = flags['o']
     skip_import = flags['s']
     remove_untarred = flags['r']
     list_only = flags['l']
     number_of_scenes = flags['n']
     tgis = flags['t']
+    force_timestamping = flags['f']
     one_mapset = flags['1']
 
     if list_only:  # don't import
