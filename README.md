@@ -4,23 +4,27 @@ i.landsat.import
 ================
 
 *i.landsat.import* is a GRASS-GIS module that imports Landsat satellite imagery
-scenes in GRASS GIS' data base. It treats Landsat scenes of both forms, `tar.gz`
-(packed and compressed) as well as (decompressed and unpacked) GeoTiFF files of
-a single scene that reside inside a directory named after the scene.
+scenes in GRASS GIS' data base. Alternatively, the module creates pseudo GRASS
+raster maps and links them directly to the original GeoTIFF files. [flag -e, see
+`r.external`]
+
+It treats Landsat scenes of both forms, `tar.gz` (packed and compressed) as
+well as (decompressed and unpacked) GeoTiFF files of a single scene that reside
+inside a directory named after the scene. [option `scene`]
 
 The module handles also multiple scenes. It imports all bands that pertain to a
 scene in one indepenendet Mapset. If requested, multiple scenes are imported in
 one Mapset and band names are prefixed with each scene's unique identifier.
 
 The MTL metadata file is copied under the target mapset's `cell_misc`
-directory. This can be however overriden by using the `m` flag.
+directory. This can be overriden by using the `-c` flag.
 Date (year, month, day) and time (hours, minutes, seconds, timezone) of
-acquisition are transferred to each imported band.
+acquisitions are transferred to each imported band. [see r.timestamp]
 
 The module has got some handy skills to print out only the number of scenes
-inside the `pool` directory, list basic metadata and bands that pertain to each
-scene as well as print out a valid TGIS list of timestamps (one to use along
-with `t.register`).
+inside a given `pool` directory, list basic metadata and bands that pertain to
+each scene as well as print out a valid TGIS list of timestamps (one to use
+along with `t.register`).
 
 Examples
 ========
@@ -35,6 +39,8 @@ i.landsat.import -l LC81840332014146LGN00
 
 The timestamp for this scene, to use with GRASS' TGIS, is:
 ```
+i.landsat.import -t LC81840332014146LGN00
+
 LC81840332014146LGN00<Suffix>|2014-05-26 09:10:26.7368720 +0000
 ```
 
@@ -56,11 +62,19 @@ If we decide to copy afterwards the MTL file, or, even, if we somehow have
 removed one of the bands, the module will skip re-importing existing bands.
 
 Expectedly, repeating the previous command `i.landsat.import -m
-LC81840332014146LGN00`, will break and complaing about existing bands. Using
+LC81840332014146LGN00`, will break and complain about existing bands. Using
 the -s flag, the module will skip existing bands
 ```
 i.landsat.import LC81840332014146LGN00 -s --v
 ```
+
+As usual in GRASS GIS, the `--o` flag is always handy in case overwriting
+existing maps is desired.
+
+### Link to GeoTIFF files
+
+Using the `-e` flags, the module calls internall `r.external`. GeoTIFF files
+will be linked directly to GRASS' data base via pseudo GRASS raster maps.
 
 ## Multiples scenes
 
@@ -127,8 +141,7 @@ To Do
 =====
 
 - Complete README.md, update/improve manual
-- memory option is not passed to `r.in.gdal`
-- Fix: MTL file is copied as file named `cell_misc` under the PERMANENT mapset.
+- Unmess options which are spread around, cleaner internal naming for flags. Well, tidy up!
 - Test for range of input date, time, timezone
 - What other meta can be transferred from the MTL file?
 
