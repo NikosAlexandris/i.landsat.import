@@ -4,27 +4,38 @@ i.landsat.import
 ================
 
 *i.landsat.import* is a GRASS-GIS module that imports Landsat satellite imagery
-scenes in GRASS GIS' data base. Alternatively, the module creates pseudo GRASS
-raster maps and links them directly to the original GeoTIFF files. [flag -e, see
-`r.external`]
+scenes as native GRASS raster maps in its data base.
 
-It treats Landsat scenes of both forms, `tar.gz` (packed and compressed) as
-well as (decompressed and unpacked) GeoTiFF files of a single scene that reside
-inside a directory named after the scene. [option `scene`]
-
-The module handles also multiple scenes. It imports all bands that pertain to a
-scene in one indepenendet Mapset. If requested, multiple scenes are imported in
-one Mapset and band names are prefixed with each scene's unique identifier.
+Landsat scenes can be acquired in two forms. One is a (packed and compressed)
+`tar.gz` file. Another is an (uncompressed and unpacked) directory containing
+the multispectral band and thermal channel acquisitions in form of GeoTiFF
+files. Albeit, along with various metadata. The module treats both forms.
+[option `scene`, single or multiple inputs]
 
 The MTL metadata file is copied under the target mapset's `cell_misc`
-directory. This can be cancelled by using the `-c` flag.
-Date (year, month, day) and time (hours, minutes, seconds, timezone) of
-acquisitions are transferred to each imported band. [see r.timestamp]
+directory. This can be cancelled by using the `-c` flag. Date (year, month,
+day) and time (hours, minutes, seconds, timezone) of acquisitions are
+transferred to each imported band. [see `r.timestamp`]
 
-The module has got some handy skills to print out only the number of scenes
-inside a given `pool` directory, list basic metadata and bands that pertain to
-each scene as well as print out a valid TGIS list of timestamps (one to use
-along with `t.register`).
+Alternatively, the module creates pseudo GRASS raster maps via the `-e` flag.
+Instead of creating native GRASS raster maps, it links directly to the original
+GeoTIFF files. [see `r.external`]
+
+For whatsoever might be the reason, it is possible to rerun the import process.
+Existing bands may be retained by skipping the import via the `-s` flag.
+At the same time, for bands which might lack of a timestamp, time stamping may
+be forced via the `-f` flag.
+
+Multiple scenes are imported in individual Mapsets. That is bands of one scene,
+are imported in one indepenendet Mapset. If requested, all scenes are imported
+in one single Mapset. [flag `-1` and option `mapset`]. For the latter, band
+names are prefixed with each scene's unique identifier. This eases off building
+time series via GRASS' temporal `t.`-modules.
+
+The module has got some handy skills to count the number of scenes inside a
+given `pool` directory [flag `-n`], list basic metadata and bands that pertain to each
+scene [flag `-l`] as well as print, or export in a file, a valid TGIS list of timestamps
+(one to use along with `t.register`) [flag `-t`].
 
 Examples
 ========
@@ -73,7 +84,7 @@ existing maps is desired.
 
 ### Link to GeoTIFF files
 
-Using the `-e` flags, the module calls internall `r.external`. GeoTIFF files
+Using the `-e` flags, the module calls internally `r.external`. GeoTIFF files
 will be linked directly to GRASS' data base via pseudo GRASS raster maps.
 
 ## Multiples scenes
