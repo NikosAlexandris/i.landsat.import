@@ -33,9 +33,9 @@ names are prefixed with each scene's unique identifier. This eases off building
 time series via GRASS' temporal `t.`-modules.
 
 The module has got some handy skills to count the number of scenes inside a
-given `pool` directory [flag `-n`], list basic metadata and bands that pertain to each
-scene [flag `-l`] as well as print, or export in a file, a valid TGIS list of timestamps
-(one to use along with `t.register`) [flag `-t`].
+given `pool` directory [flag `-n`], list basic metadata and bands that pertain
+to each scene [flag `-l`] as well as print, or export in a file, a valid TGIS
+list of timestamps (one to use along with `t.register`) [flag `-t`].
 
 Examples
 ========
@@ -46,6 +46,28 @@ Assuming we have beforehand the scene LC81840332014146LGN00 (decompressed and
 unpacked), let's list basic metadata and bands of a scene
 ```
 i.landsat.import -l LC81840332014146LGN00
+```
+will return
+```
+Date            Time
+
+2014-05-26      09:10:26.7368720 +0000
+
+
+Band    Filename
+
+BQA     LC81840332014146LGN00_BQA.TIF
+B11     LC81840332014146LGN00_B11.TIF
+B6      LC81840332014146LGN00_B6.TIF
+B1      LC81840332014146LGN00_B1.TIF
+B8      LC81840332014146LGN00_B8.TIF
+B10     LC81840332014146LGN00_B10.TIF
+B9      LC81840332014146LGN00_B9.TIF
+B7      LC81840332014146LGN00_B7.TIF
+B4      LC81840332014146LGN00_B4.TIF
+B3      LC81840332014146LGN00_B3.TIF
+B2      LC81840332014146LGN00_B2.TIF
+B5      LC81840332014146LGN00_B5.TIF
 ```
 
 The timestamp for this scene, to use with GRASS' TGIS, is:
