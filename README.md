@@ -17,7 +17,7 @@ scene in one indepenendet Mapset. If requested, multiple scenes are imported in
 one Mapset and band names are prefixed with each scene's unique identifier.
 
 The MTL metadata file is copied under the target mapset's `cell_misc`
-directory. This can be overriden by using the `-c` flag.
+directory. This can be cancelled by using the `-c` flag.
 Date (year, month, day) and time (hours, minutes, seconds, timezone) of
 acquisitions are transferred to each imported band. [see r.timestamp]
 
@@ -141,7 +141,8 @@ To Do
 =====
 
 - Complete README.md, update/improve manual
-- Unmess options which are spread around, cleaner internal naming for flags. Well, tidy up!
+- `tgis` output file to collect timestamps suitable for t.register yet to be
+implemented.
 - Test for range of input date, time, timezone
 - What other meta can be transferred from the MTL file?
 
