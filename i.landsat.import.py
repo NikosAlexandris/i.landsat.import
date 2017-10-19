@@ -44,6 +44,12 @@
 #%  description: Skip import of existing band(s)
 #%end
 
+######################
+# %rules
+# %  excludes: -s, --o
+# %end
+######################
+
 #%flag
 #%  key: r
 #%  description: Remove scene directory after import if source is a tar.gz file
@@ -245,6 +251,12 @@ def get_name_band(scene, filename):
 
     # detect image quality strings in filenames
     if any(string in absolute_filename for string in IMAGE_QUALITY_STRINGS):
+        # base_filename = os.path.basename(absolute_filename)
+        # basename = os.path.splitext(base_filename)[0]
+        # if one_mapset:
+        #     name = basename
+        #     band = basename.split('_')[1]
+        # else:
         name = "".join((os.path.splitext(absolute_filename)[0].split('_'))[1::2])
 
     # keep only the last part of the filename
@@ -276,6 +288,10 @@ def get_name_band(scene, filename):
     # is it a single-digit band?
     else:
         band = int(name[-1:])
+
+    # one Mapset requested? prefix raster map names with scene id
+    if one_mapset:
+        name = os.path.basename(scene) + '_' + name
 
     return name, band
 
@@ -473,7 +489,7 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
 
     message = str()  # a string holder
 
-    # print target mapset
+    # verbosity: target Mapset
     if not any(x for x in (list_bands, tgis)):
         message = 'Target Mapset\t@{mapset}\n\n'.format(mapset=mapset)
 
@@ -496,7 +512,7 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
         if not tgis:
 
             # communicate input band and source file name
-            message = '{name}'.format(name = name)
+            message = '{band}'.format(band = band)
             message += '\t{filename}'.format(filename = filename)
             if not skip_import:
                 g.message(_(message))
@@ -514,7 +530,6 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
             parameters = dict(input = absolute_filename,
                     output = name,
                     flags = '',
-                    memory = memory,
                     title = band_title,
                     quiet = True)
 
@@ -526,13 +541,6 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
 
             # create Mapset of interest, if it doesn't exist
             run('g.mapset', flags = 'c', mapset = mapset, stderr = open(os.devnull, 'w'))
-
-            # is one Mapset requested, prefix raster map names with scene id
-            if one_mapset:
-                name = os.path.basename(scene) + '_' + name
-
-            # if isinstance(band, str):
-            #     print '"Band" {s} is a string!'.format(s=band)
 
             if (skip_import and find_existing_band(name)):
 
@@ -549,18 +557,17 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
 
                 if link_geotiffs:
 
-                    r.external(input = absolute_filename,
-                            output = name,
-                            title = band_title)
+                    r.external(**parameters)
 
                 else:
+                    if memory:
+                        parameters['memory'] = memory
                     # try:
                     r.in_gdal(**parameters)
 
                     # except CalledModuleError:
                         # grass.fatal(_("Unable to read GDAL dataset {s}".format(s=scene)))
 
-                # set date & time
                 set_timestamp(name, timestamp)
 
         else:
