@@ -40,10 +40,20 @@ list of timestamps (one to use along with `t.register`) [flag `-t`].
 Examples
 ========
 
+For the following examples, work is demoed with the LC81840332014146LGN00
+(decompressed and unpacked) scene.
+
+First grass-y things first: create a Location for this scene. It lies inside the
+WRS2 tile Path 184 and Row 033, which is covered by UTM zone 34N. This is done
+automagically by using the geo-meta-tags that are part of all GeoTIFF files.
+
+```
+grass72 -c LC81840332014146LGN00_B1.TIF /grassdb/l8/
+```
+
 ## Single scenes
 
-Assuming we have beforehand the scene LC81840332014146LGN00 (decompressed and
-unpacked), let's list basic metadata and bands of a scene
+Let's list basic metadata and bands
 ```
 i.landsat.import -l LC81840332014146LGN00
 ```
@@ -70,36 +80,38 @@ B2      LC81840332014146LGN00_B2.TIF
 B5      LC81840332014146LGN00_B5.TIF
 ```
 
-The timestamp for this scene, to use with GRASS' TGIS, is:
+Its timestamp, in form to use with GRASS' TGIS, is:
 ```
 i.landsat.import -t LC81840332014146LGN00
 
 LC81840332014146LGN00<Suffix>|2014-05-26 09:10:26.7368720 +0000
 ```
 
-Note, at the moment, it is required to edit manually the <Suffix> part to
+*At the moment*, it is required to edit manually the <Suffix> part to
 comply with the name of a STRDS. [ToDo: provide for a prefix to do this less
 cumbersome].
 
-We can import this scene in its own Mapset (use --v for verbosity) and request
-from the module to not copy the MTL file under `cell_misc`
+We can import the scene in its own Mapset (use --v for verbosity) and request
+from the module to *not* copy the MTL file under `cell_misc`
 ```
 i.landsat.import -m LC81840332014146LGN00
 ```
 
-By the way, the module will only create a new Mapset, named after the directory
-that contains the requested scene. In this way, re-running the same command
-will skip recreating an existing Mapset.
+By the way, the module will create a new Mapset, named after the directory
+that contains the requested scene. Re-running the import command for the same
+scene, will simply pass the step of recreating the existing Mapset.
 
-If we decide to copy afterwards the MTL file, or, even, if we somehow have
-removed one of the bands, the module will skip re-importing existing bands.
+If decision is made afterwards to copy the MTL file, we may re-run the import
+process. The `-s` flag is therefore useful to skip over existing bands which
+otherwise would break the execution. As well, it helps in cases where some
+bands have been removed.
 
-Expectedly, repeating the previous command `i.landsat.import -m
-LC81840332014146LGN00`, will break and complain about existing bands. Using
-the -s flag, the module will skip existing bands
 ```
 i.landsat.import LC81840332014146LGN00 -s --v
 ```
+
+Noteworthy is the memory option which is passed, internally, to `r.in.gdal`,
+the actual importer. [see also `r.in.gdal`]
 
 As usual in GRASS GIS, the `--o` flag is always handy in case overwriting
 existing maps is desired.
