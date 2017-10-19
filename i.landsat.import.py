@@ -251,12 +251,6 @@ def get_name_band(scene, filename):
 
     # detect image quality strings in filenames
     if any(string in absolute_filename for string in IMAGE_QUALITY_STRINGS):
-        # base_filename = os.path.basename(absolute_filename)
-        # basename = os.path.splitext(base_filename)[0]
-        # if one_mapset:
-        #     name = basename
-        #     band = basename.split('_')[1]
-        # else:
         name = "".join((os.path.splitext(absolute_filename)[0].split('_'))[1::2])
 
     # keep only the last part of the filename
