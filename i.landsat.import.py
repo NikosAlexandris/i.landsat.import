@@ -325,7 +325,10 @@ def copy_mtl_in_cell_misc(scene, mapset, tgis, copy_mtl=True) :
     path_to_cell_misc = get_path_to_cell_misc(mapset)
 
     if is_mtl_in_cell_misc(mapset):
-        g.message(_(' MTL exists in {d}'.format(d=path_to_cell_misc)))
+        message = 79 * '-' + '\n'
+        message += ' MTL exists in {d}'.format(d=path_to_cell_misc)
+        message += '\n' + 79 * '-' + '\n'
+        g.message(_(message))
         pass
 
     else:
@@ -335,16 +338,19 @@ def copy_mtl_in_cell_misc(scene, mapset, tgis, copy_mtl=True) :
             metafile = get_metafile(scene, tgis)
 
             # copy the metadata file -- Better: check if really copied!
-            message = ' MTL file copied at <{directory}>.'
+            message = 79 * '-' + '\n'
+            message += ' MTL file copied at <{directory}>.'
             message = message.format(directory=path_to_cell_misc)
             g.message(_(message))
             shutil.copy(metafile, path_to_cell_misc)
 
         else:
-            g.message(_(' MTL not transferred under {m}/cell_misc'.format(m=scene)))
+            message = 79 * '-' + '\n'
+            message += ' MTL not transferred under {m}/cell_misc'.format(m=scene)
+            g.message(_(message))
 
-    message = 79 * '-' + '\n'
-    g.message(_(message))
+    # message = 79 * '-' + '\n'
+    # g.message(_(message))
 
 def add_leading_zeroes(real_number, n):
      """
@@ -513,8 +519,7 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
 
             else:
                 # message for skipping import
-                message_skipping = '\t>>>\tAlready exists! '.format(b=band)
-                message_skipping += 'Skipping import.'
+                message_skipping = '\t [ Exists, skipping ]'
 
         if not any(x for x in (list_bands, tgis)):
 
@@ -546,6 +551,8 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
                 g.message(_(message_skipping))
                 pass
 
+            elif (skip_import and not find_existing_band(name)):
+                grass.fatal(_("Skip flag does not apply for new Mapsets"))
 
             else:
 
@@ -566,10 +573,6 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
 
         else:
             pass
-
-    if not tgis:
-        message = 79 * '-'
-        g.message(_(message))
 
     # copy MTL
     if not list_bands and not tgis:
@@ -598,7 +601,7 @@ def main():
     tregister = options['tgis']
     memory = options['memory']
 
-    if list_bands:  # don't import
+    if list_bands or count_scenes:  # don't import
         os.environ['GRASS_VERBOSE'] = '3'
 
     # if a single mapset requested
@@ -648,6 +651,11 @@ def main():
                 message = message.format(s = scene)
                 grass.verbose(_(message))
                 shutil.rmtree(scene)
+
+            if not tgis and not is_mtl_in_cell_misc(mapset) and (len(landsat_scenes) > 1):
+                message = 79 * '-' + '\n'
+                g.message(_(message))
+
 
 
 if __name__ == "__main__":

@@ -29,8 +29,8 @@ be forced via the `-f` flag.
 Multiple scenes are imported in individual Mapsets. That is bands of one scene,
 are imported in one indepenendet Mapset. If requested, all scenes are imported
 in one single Mapset. [flag `-1` and option `mapset`]. For the latter, band
-names are prefixed with each scene's unique identifier. This eases off building
-time series via GRASS' temporal `t.`-modules.
+names are prefixed with each scene's unique identifier. This may ease off
+building time series via GRASS' temporal `t.`-modules.
 
 The module has got some handy skills to count the number of scenes inside a
 given `pool` directory [flag `-n`], list basic metadata and bands that pertain
