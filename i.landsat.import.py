@@ -84,7 +84,6 @@
 #%  description: Import all scenes in one Mapset
 #%end
 
-
 #%option
 #% key: scene
 #% key_desc: name
@@ -179,6 +178,8 @@ GEOTIFF_EXTENSION = '.TIF'
 IMAGE_QUALITY_STRINGS = ['QA', 'VCID']
 QA_STRING = 'QA'
 MTL_STRING = 'MTL'
+HORIZONTAL_LINE = 79 * '-' + '\n'
+MEMORY_DEFAULT = '300'
 
 # environment variables
 grass_environment = grass.gisenv()
@@ -189,19 +190,19 @@ MAPSET = grass_environment['MAPSET']
 # # path to "cell_misc"
 CELL_MISC = 'cell_misc'
 
-def get_path_to_cell_misc(mapset):
-    """
-    Return path to the cell_misc directory inside the requested Mapset
-    """
-    path_to_cell_misc = '/'.join([GISDBASE, LOCATION, mapset, CELL_MISC])
-    return path_to_cell_misc
-
 # helper functions
 def run(cmd, **kwargs):
     """
     Pass quiet flag to grass commands
     """
     grass.run_command(cmd, quiet=True, **kwargs)
+
+def get_path_to_cell_misc(mapset):
+    """
+    Return path to the cell_misc directory inside the requested Mapset
+    """
+    path_to_cell_misc = '/'.join([GISDBASE, LOCATION, mapset, CELL_MISC])
+    return path_to_cell_misc
 
 def find_existing_band(band):
     """
@@ -325,9 +326,9 @@ def copy_mtl_in_cell_misc(scene, mapset, tgis, copy_mtl=True) :
     path_to_cell_misc = get_path_to_cell_misc(mapset)
 
     if is_mtl_in_cell_misc(mapset):
-        message = 79 * '-' + '\n'
-        message += ' MTL exists in {d}'.format(d=path_to_cell_misc)
-        message += '\n' + 79 * '-' + '\n'
+        message = HORIZONTAL_LINE
+        message += ' MTL exists in {d}\n'.format(d=path_to_cell_misc)
+        message += HORIZONTAL_LINE
         g.message(_(message))
         pass
 
@@ -338,19 +339,16 @@ def copy_mtl_in_cell_misc(scene, mapset, tgis, copy_mtl=True) :
             metafile = get_metafile(scene, tgis)
 
             # copy the metadata file -- Better: check if really copied!
-            message = 79 * '-' + '\n'
+            message = HORIZONTAL_LINE
             message += ' MTL file copied at <{directory}>.'
             message = message.format(directory=path_to_cell_misc)
             g.message(_(message))
             shutil.copy(metafile, path_to_cell_misc)
 
         else:
-            message = 79 * '-' + '\n'
+            message = HORIZONTAL_LINE
             message += ' MTL not transferred under {m}/cell_misc'.format(m=scene)
             g.message(_(message))
-
-    # message = 79 * '-' + '\n'
-    # g.message(_(message))
 
 def add_leading_zeroes(real_number, n):
      """
@@ -499,7 +497,12 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
         g.message(_(message))
 
     # loop over files inside a "Landsat" directory
-    for filename in os.listdir(scene):
+    # sort band numerals, source: https://stackoverflow.com/a/2669523/1172302
+    filenames = sorted(os.listdir(scene), key=lambda item:
+            (int(item.partition('_B')[2].partition('.')[0])
+                if item.partition('_B')[2].partition('.')[0].isdigit()
+                else float('inf'), item))
+    for filename in filenames:
 
         # if not GeoTIFF, keep on working
         if os.path.splitext(filename)[-1] != GEOTIFF_EXTENSION:
@@ -611,11 +614,10 @@ def main():
     else:
         mapset = MAPSET
 
-    if (memory != '300'):
-        message = 79 * '-'
-        message += ('\nCache size set to {m} MB\n'.format(m = memory))
-        message += 79 * '-'
-        message += '\n'
+    if (memory != MEMORY_DEFAULT):
+        message = HORIZONTAL_LINE
+        message += ('Cache size set to {m} MB\n'.format(m = memory))
+        message += HORIZONTAL_LINE
         grass.verbose(_(message))
 
     # import all scenes from pool
@@ -653,10 +655,8 @@ def main():
                 shutil.rmtree(scene)
 
             if not tgis and not is_mtl_in_cell_misc(mapset) and (len(landsat_scenes) > 1):
-                message = 79 * '-' + '\n'
+                message = HORIZONTAL_LINE
                 g.message(_(message))
-
-
 
 if __name__ == "__main__":
     options, flags = grass.parser()

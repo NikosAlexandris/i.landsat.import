@@ -40,7 +40,7 @@ list of timestamps (one to use along with `t.register`) [flag `-t`].
 Examples
 ========
 
-For the following examples, work is demoed with the LC81840332014146LGN00
+In the following examples, work is demoed with the LC81840332014146LGN00
 (decompressed and unpacked) scene.
 
 First grass-y things first: create a Location for this scene. It lies inside the
