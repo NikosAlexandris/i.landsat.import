@@ -27,16 +27,19 @@
 #%flag
 #%  key: e
 #%  description: External GeoTiFF files as pseudo GRASS raster maps
+#%  guisection: Input
 #%end
 
 #%flag
 #%  key: c
 #%  description: Do not copy the metatada file in GRASS' data base
+#%  guisection: Input
 #%end
 
 #%flag
 #%  key: o
 #%  description: Override projection check
+#%  guisection: Input
 #%end
 
 #%flag
@@ -58,11 +61,13 @@
 #%flag
 #%  key: l
 #%  description: List bands and exit
+#%  guisection: Input
 #%end
 
 #%flag
 #%  key: t
 #%  description: t.register compliant list of scene names and their timestamp, one per line
+#%  guisection: Input
 #%end
 
 #%flag
@@ -77,16 +82,18 @@
 #%flag
 #%  key: n
 #%  description: Count scenes in pool
+#%  guisection: Input
 #%end
 
 #%flag
 #%  key: 1
 #%  description: Import all scenes in one Mapset
+#%  guisection: Optional
 #%end
 
 #%option
 #% key: scene
-#% key_desc: name
+#% key_desc: id
 #% label: One or multiple Landsat scenes
 #% description: Compressed tar.gz files or decompressed and unpacked directories
 #% multiple: yes
@@ -111,6 +118,15 @@
 #%end
 
 #%option
+#% key: band
+#% type: integer
+#% required: no
+#% multiple: yes
+#% description: Input band(s) to select (default is all bands)
+#% guisection: Input
+#%end
+
+#%option
 #% key: mapset
 #% key_desc: name
 #% label: Mapset to import all scenes in
@@ -124,7 +140,7 @@
 
 #%option
 #% key: timestamp
-#% key_desc: Time stamp
+#% key_desc: 'yyyy-mm-dd hh:mm:ss.ssssss +zzzz'
 #% type: string
 #% label: Manual timestamp definition
 #% description: Date and time of scene acquisition
@@ -133,7 +149,7 @@
 
 #%option
 #%  key: tgis
-#%  key_desc:
+#%  key_desc: filename
 #%  label: Output file name for t.register
 #%  description: List of scene names and their timestamp
 #%  multiple: no

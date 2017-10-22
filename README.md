@@ -234,6 +234,7 @@ To Do
 - Complete README.md, update/improve manual
 - `tgis` output file to collect timestamps suitable for t.register yet to be
 implemented.
+- Add `bands` option, to selectively import specified bands
 - Test for range of input date, time, timezone
 - What other meta can be transferred from the MTL file?
 
