@@ -175,6 +175,7 @@ import shutil
 import tarfile
 import glob
 # import shlex
+import datetime
 import atexit
 import grass.script as grass
 from grass.exceptions import CalledModuleError
@@ -366,6 +367,30 @@ def copy_mtl_in_cell_misc(scene, mapset, tgis, copy_mtl=True) :
             message += ' MTL not transferred under {m}/cell_misc'.format(m=scene)
             g.message(_(message))
 
+def validate_date_string(date_string):
+    """
+    """
+    try:
+        datetime.datetime.strptime(date_string, '%Y-%m-%d')
+
+    except ValueError:
+        raise ValueError("Incorrect data format, should be YYYY-MM-DD")
+
+def validate_time_string(time_string):
+    """
+    """
+    # if 'Z' in time_string:
+    #     time_string = time_string.replace('Z', ' +0000')
+
+    try:
+        if '.' in time_string:
+            datetime.datetime.strptime(time_string, '%H:%M:%S.%f')
+        else:
+            datetime.datetime.strptime(time_string, '%H:%M:%S')
+
+    except ValueError:
+        raise ValueError("Incorrect data format, should be HH:MM:SS.ssssss")
+
 def add_leading_zeroes(real_number, n):
      """
      Add leading zeroes to floating point numbers
@@ -384,6 +409,8 @@ def get_timestamp(scene, tgis):
     # if set, get time stamp from options
     if options['timestamp']:
         date_time = options['timestamp']
+        # date_time_string = options['timestamp']
+        # date = validate_date_time_string()
         timestamp_message = "(set manually)"
 
     else:
@@ -405,6 +432,7 @@ def get_timestamp(scene, tgis):
                 # get Date
                 if any(x in line for x in DATE_STRINGS):
                     date_time['date'] = line.strip().split('=')[1].strip()
+                    validate_date_string(date_time['date'])
 
                 # get Time
                 if any(x in line for x in TIME_STRINGS):
@@ -418,12 +446,32 @@ def get_timestamp(scene, tgis):
                         date_time['timezone'] = ZERO_TIMEZONE
 
                     # remove 'Z' and split the string before & after ':'
-                    time = line.strip().split('=')[1].strip().translate(None, 'Z').split(':')
+                    time = line.strip().split('=')[1].strip().translate(None, 'Z')
+
+                    # split string, convert to int later -- This Is Not Right
+                    hours, minutes, seconds = time.split('.')[0].split(':')
+                    seconds = int(seconds)
+
+                    # round microseconds to six digits!
+                    microseconds = float(time.split('.')[1])
+                    microseconds = round((microseconds / 10000000), 6)
+
+                    # add to seconds
+                    seconds += microseconds
+                    seconds = format(seconds, '.6f')
+                    seconds = add_leading_zeroes(seconds, 2)
+
+                    if float(seconds) < 10:
+                        seconds = seconds.split('.')[0]
+
+                    time = ':'.join([hours, minutes, str(seconds)])
+                    validate_time_string(time)
+                    time = time.split(':')
 
                     # create hours, minutes, seconds in date_time dictionary
-                    date_time['hours'] = format(int(time[0]), '02d')
-                    date_time['minutes'] = format(int(time[1]), '02d')
-                    date_time['seconds'] = add_leading_zeroes(time[2], 2) # float?
+                    date_time['hours'] = format(int(hours), '02d')
+                    date_time['minutes'] = format(int(minutes), '02d')
+                    date_time['seconds'] = seconds # float?
 
         finally:
             metadata.close()
@@ -463,7 +511,6 @@ def set_timestamp(band, timestamp):
         # year, month, day
         if ('-' in timestamp['date']):
             year, month, day = timestamp['date'].split('-')
-
         # else, if not ('-' in timestamp['date']): what?
 
         month = MONTHS[month]
@@ -484,7 +531,7 @@ def set_timestamp(band, timestamp):
         # timestamp = shlex.quotes(timestamp)  # This is failing in my bash!
 
     # stamp bands
-    run('r.timestamp', map=band, date=timestamp)
+    grass.run_command('r.timestamp', map=band, date=timestamp, verbose=True)
 
 def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
     """
