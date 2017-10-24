@@ -65,6 +65,18 @@
 #%end
 
 #%flag
+#%  key: m
+#%  description: Skip microseconds
+#%  guisection: Input
+#%end
+
+#%flag
+#%  key: d
+#%  description: Do not timestamp imported bands
+#%  guisection: Input
+#%end
+
+#%flag
 #%  key: t
 #%  description: t.register compliant list of scene names and their timestamp, one per line
 #%  guisection: Input
@@ -147,13 +159,23 @@
 #% required: no
 #%end
 
-#%option
-#%  key: tgis
+#%option G_OPT_F_OUTPUT
+#%  key: output
 #%  key_desc: filename
-#%  label: Output file name for t.register
-#%  description: List of scene names and their timestamp
+#%  label: Output file name for t.register compliant timestamps
+#%  description: List of scene names and corresponding timestamps
 #%  multiple: no
 #%  required: no
+#% guisection: Output
+#%end
+
+#%option
+#% key: prefix
+#% key_desc: prefix string
+#% type: string
+#% label: Prefix for scene names in tgis output
+#% description: Scene names will get this prefix in the tgis output file
+#% required: no
 #%end
 
 #%option
@@ -175,7 +197,7 @@ import shutil
 import tarfile
 import glob
 # import shlex
-import datetime
+from datetime import datetime
 import atexit
 import grass.script as grass
 from grass.exceptions import CalledModuleError
@@ -371,7 +393,7 @@ def validate_date_string(date_string):
     """
     """
     try:
-        datetime.datetime.strptime(date_string, '%Y-%m-%d')
+        datetime.strptime(date_string, '%Y-%m-%d')
 
     except ValueError:
         raise ValueError("Incorrect data format, should be YYYY-MM-DD")
@@ -384,9 +406,9 @@ def validate_time_string(time_string):
 
     try:
         if '.' in time_string:
-            datetime.datetime.strptime(time_string, '%H:%M:%S.%f')
+            datetime.strptime(time_string, '%H:%M:%S.%f')
         else:
-            datetime.datetime.strptime(time_string, '%H:%M:%S')
+            datetime.strptime(time_string, '%H:%M:%S')
 
     except ValueError:
         raise ValueError("Incorrect data format, should be HH:MM:SS.ssssss")
@@ -452,14 +474,15 @@ def get_timestamp(scene, tgis):
                     hours, minutes, seconds = time.split('.')[0].split(':')
                     seconds = int(seconds)
 
-                    # round microseconds to six digits!
-                    microseconds = float(time.split('.')[1])
-                    microseconds = round((microseconds / 10000000), 6)
+                    if not skip_microseconds:
+                        # round microseconds to six digits!
+                        microseconds = float(time.split('.')[1])
+                        microseconds = round((microseconds / 10000000), 6)
 
-                    # add to seconds
-                    seconds += microseconds
-                    seconds = format(seconds, '.6f')
-                    seconds = add_leading_zeroes(seconds, 2)
+                        # add to seconds
+                        seconds += microseconds
+                        seconds = format(seconds, '.6f')
+                        seconds = add_leading_zeroes(seconds, 2)
 
                     if float(seconds) < 10:
                         seconds = seconds.split('.')[0]
@@ -471,6 +494,7 @@ def get_timestamp(scene, tgis):
                     # create hours, minutes, seconds in date_time dictionary
                     date_time['hours'] = format(int(hours), '02d')
                     date_time['minutes'] = format(int(minutes), '02d')
+                    print "Seconds finally: ", seconds
                     date_time['seconds'] = seconds # float?
 
         finally:
@@ -482,11 +506,22 @@ def print_timestamp(scene, timestamp, tgis=False):
     """
     """
     date = timestamp['date']
+    date_Ymd = datetime.strptime(date, "%Y-%m-%d")
+    date_dbY = datetime.strftime(date_Ymd, "%d %b %Y")
+
     hours = str(timestamp['hours'])
     minutes = str(timestamp['minutes'])
     seconds = str(timestamp['seconds'])
     timezone = timestamp['timezone']
+
     time = ':'.join((hours, minutes, seconds))
+    string_parse_time = "%H:%M:%S"
+    if '.' not in time:
+        time += '.000000'
+    if '.' in time:
+        string_parse_time += ".%f"
+    time = datetime.strptime(time, string_parse_time)
+    time = datetime.strftime(time, string_parse_time)
 
     message = 'Date\t\tTime\n\n{date}\t{time} {timezone}\n\n'
 
@@ -497,9 +532,20 @@ def print_timestamp(scene, timestamp, tgis=False):
         os.environ['GRASS_VERBOSE'] = GRASS_VERBOSITY_LELVEL_3
 
         # timezone = timezone.replace('+', '')
-        message = '{s}<Suffix>|{d} {t} {tz}'.format(s=scene, d=date, t=time, tz=timezone)
+        prefix = '<Prefix>'
+        if prefix:
+            prefix = options['prefix']
+        # message = '{p}{s}|{d} {t} {tz}'.format(s=scene, p=prefix, d=date, t=time, tz=timezone)
+        message = '{p}{s}|{d} {t}'.format(s=scene, p=prefix, d=date, t=time)
 
-    g.message(_(message.format(date=date, time=time, timezone=timezone)))
+        # add to timestamps
+        if tgis_output:
+            global timestamps
+            timestamps.append(message)
+
+    if not tgis:
+        message = message.format(date=date_dbY, time=time, timezone=timezone)
+    g.message(_(message))
 
 def set_timestamp(band, timestamp):
     """
@@ -565,6 +611,7 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
             (int(item.partition('_B')[2].partition('.')[0])
                 if item.partition('_B')[2].partition('.')[0].isdigit()
                 else float('inf'), item))
+
     for filename in filenames:
 
         # if not GeoTIFF, keep on working
@@ -635,7 +682,8 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
                     # except CalledModuleError:
                         # grass.fatal(_("Unable to read GDAL dataset {s}".format(s=scene)))
 
-                set_timestamp(name, timestamp)
+                if not do_not_timestamp:
+                    set_timestamp(name, timestamp)
 
         else:
             pass
@@ -646,7 +694,7 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
 
 def main():
 
-    global GISDBASE, LOCATION, MAPSET, CELL_MISC, link_geotiffs, copy_mtl, override_projection, skip_import, force_timestamp, one_mapset, mapset
+    global GISDBASE, LOCATION, MAPSET, CELL_MISC, link_geotiffs, copy_mtl, override_projection, skip_import, mapset
 
     # flags
     link_geotiffs = flags['e']
@@ -656,15 +704,25 @@ def main():
     remove_untarred = flags['r']
     list_bands = flags['l']
     count_scenes = flags['n']
+    global skip_microseconds
+    skip_microseconds = flags['m']
+    global do_not_timestamp
+    do_not_timestamp = flags['d']
     tgis = flags['t']
+    global force_timestamp
     force_timestamp = flags['f']
+    global one_mapset
     one_mapset = flags['1']
 
     # options
     scene = options['scene']
     pool = options['pool']
     timestamp = options['timestamp']
-    tregister = options['tgis']
+    global timestamps
+    timestamps = []
+
+    global tgis_output
+    tgis_output = options['output']
     memory = options['memory']
 
     if list_bands or count_scenes:  # don't import
@@ -720,6 +778,14 @@ def main():
             if not tgis and not is_mtl_in_cell_misc(mapset) and (len(landsat_scenes) > 1):
                 message = HORIZONTAL_LINE
                 g.message(_(message))
+
+    if tgis and tgis_output:
+        output_file = file(tgis_output, 'w')
+        for timestamp in timestamps:
+            timestamp += '\n'
+            output_file.write(timestamp)
+        output_file.close()
+        del(output_file)
 
 if __name__ == "__main__":
     options, flags = grass.parser()

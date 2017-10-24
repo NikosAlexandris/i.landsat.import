@@ -232,6 +232,11 @@ To Do
 =====
 
 - Complete README.md, update/improve manual
+- Ideally, get rid of all Landsat-meta related stuff, develop further a
+Landsat(8) class with getters and setters.
+- Actually, the whole date-time parsing needs to be redone, from scratch.
+Better to use datetime objects.
+- Note, microseconds are ignored in the TGIS world
 - `tgis` output file to collect timestamps suitable for t.register yet to be
 implemented.
 - Add `bands` option, to selectively import specified bands
