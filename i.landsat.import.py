@@ -170,7 +170,7 @@
 #%end
 
 #%rules
-#%  requites: output_tgis, -t
+#%  requires: output_tgis, -t
 #%end
 
 #%option
@@ -299,7 +299,7 @@ def get_name_band(scene, filename):
 
     # keep only the last part of the filename
     else:
-        name = os.path.splitext(filename)[0].split('_')[-1]
+        name = os.path.splitext(filename)[0].rsplit('_')[-1]
 
     # found a wrongly named *MTL.TIF file in LE71610432005160ASN00
     if MTL_STRING in absolute_filename:  # use grass.warning(_("..."))?
