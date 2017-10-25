@@ -25,8 +25,30 @@
 #%end
 
 #%flag
-#%  key: e
-#%  description: External GeoTiFF files as pseudo GRASS raster maps
+#%  key: l
+#%  description: List input bands and exit
+#%  guisection: Input
+#%end
+
+#%flag
+#%  key: n
+#%  description: Count scenes in pool
+#%  guisection: Input
+#%end
+
+#%flag
+#%  key: t
+#%  description: t.register compliant list of scene names and their timestamp, one per line
+#%  guisection: Input
+#%end
+
+#%rules
+#% exclusive: -t, -l
+#%end
+
+#%flag
+#%  key: o
+#%  description: Override projection check
 #%  guisection: Input
 #%end
 
@@ -37,8 +59,8 @@
 #%end
 
 #%flag
-#%  key: o
-#%  description: Override projection check
+#%  key: e
+#%  description: External GeoTiFF files as pseudo GRASS raster maps
 #%  guisection: Input
 #%end
 
@@ -59,15 +81,8 @@
 #%end
 
 #%flag
-#%  key: l
-#%  description: List bands and exit
-#%  guisection: Input
-#%end
-
-#%flag
-#%  key: m
-#%  description: Skip microseconds
-#%  guisection: Input
+#%  key: f
+#%  description: Force time-stamping. Useful for imported bands lacking a timestamp.
 #%end
 
 #%flag
@@ -77,23 +92,8 @@
 #%end
 
 #%flag
-#%  key: t
-#%  description: t.register compliant list of scene names and their timestamp, one per line
-#%  guisection: Input
-#%end
-
-#%flag
-#%  key: f
-#%  description: Force time-stamping. Useful for imported bands lacking a timestamp.
-#%end
-
-#%rules
-#% exclusive: -t, -l
-#%end
-
-#%flag
-#%  key: n
-#%  description: Count scenes in pool
+#%  key: m
+#%  description: Skip microseconds
 #%  guisection: Input
 #%end
 
@@ -160,7 +160,7 @@
 #%end
 
 #%option G_OPT_F_OUTPUT
-#%  key: output
+#%  key: output_tgis
 #%  key_desc: filename
 #%  label: Output file name for t.register compliant timestamps
 #%  description: List of scene names and corresponding timestamps
@@ -169,11 +169,15 @@
 #% guisection: Output
 #%end
 
+#%rules
+#%  requites: output_tgis, -t
+#%end
+
 #%option
 #% key: prefix
 #% key_desc: prefix string
 #% type: string
-#% label: Prefix for scene names in tgis output
+#% label: Prefix for scene names in output_tgis
 #% description: Scene names will get this prefix in the tgis output file
 #% required: no
 #%end
@@ -386,7 +390,7 @@ def copy_mtl_in_cell_misc(scene, mapset, tgis, copy_mtl=True) :
 
         else:
             message = HORIZONTAL_LINE
-            message += ' MTL not transferred under {m}/cell_misc'.format(m=scene)
+            message += ' MTL not transferred to {m}/cell_misc'.format(m=scene)
             g.message(_(message))
 
 def validate_date_string(date_string):
@@ -494,7 +498,6 @@ def get_timestamp(scene, tgis):
                     # create hours, minutes, seconds in date_time dictionary
                     date_time['hours'] = format(int(hours), '02d')
                     date_time['minutes'] = format(int(minutes), '02d')
-                    print "Seconds finally: ", seconds
                     date_time['seconds'] = seconds # float?
 
         finally:
@@ -579,7 +582,7 @@ def set_timestamp(band, timestamp):
     # stamp bands
     grass.run_command('r.timestamp', map=band, date=timestamp, verbose=True)
 
-def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
+def import_geotiffs(scene, bands, mapset, memory, list_bands, tgis = False):
     """
     Imports all bands (GeoTIF format) of a Landsat scene be it Landsat 5,
     7 or 8.  All known naming conventions are respected, such as "VCID" and
@@ -645,11 +648,18 @@ def import_geotiffs(scene, mapset, memory, list_bands, tgis = False):
                     title = band_title,
                     quiet = True)
 
+            # -------------------------------------------------------------
+            # This does not work as in r.in.gdal here!
+            # Better, select an absolute_filename if the band part of it is
+            # among the given `band` option
+
+            if bands:
+                parameters['band'] = bands
+            # -------------------------------------------------------------
+
             if override_projection:
                 parameters['flags'] += 'o'
 
-            # if bands:
-            #     parameters['band'] = bands
 
             # create Mapset of interest, if it doesn't exist
             run('g.mapset', flags = 'c', mapset = mapset, stderr = open(os.devnull, 'w'))
@@ -717,12 +727,13 @@ def main():
     # options
     scene = options['scene']
     pool = options['pool']
+    bands = options['band']
     timestamp = options['timestamp']
     global timestamps
     timestamps = []
 
     global tgis_output
-    tgis_output = options['output']
+    tgis_output = options['output_tgis']
     memory = options['memory']
 
     if list_bands or count_scenes:  # don't import
@@ -753,7 +764,7 @@ def main():
         else:
             count = 0
             for landsat_scene in landsat_scenes:
-                import_geotiffs(landsat_scene, mapset, memory, list_bands, tgis)
+                import_geotiffs(landsat_scene, bands, mapset, memory, list_bands, tgis)
 
     # import single or multiple given scenes
     if scene:
@@ -767,7 +778,7 @@ def main():
                 message = message.format(s = scene)
                 grass.verbose(_(message))
 
-            import_geotiffs(landsat_scene, mapset, memory, list_bands, tgis)
+            import_geotiffs(landsat_scene, bands, mapset, memory, list_bands, tgis)
 
             if remove_untarred:
                 message = 'Removing unpacked source directory {s}'
@@ -779,11 +790,14 @@ def main():
                 message = HORIZONTAL_LINE
                 g.message(_(message))
 
+    # output tgis compliant list of maps names and corresponding timestamps
     if tgis and tgis_output:
         output_file = file(tgis_output, 'w')
+
         for timestamp in timestamps:
             timestamp += '\n'
             output_file.write(timestamp)
+
         output_file.close()
         del(output_file)
 
