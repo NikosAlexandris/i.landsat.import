@@ -43,7 +43,7 @@
 #%end
 
 #%rules
-#% exclusive: -t, -l
+#% exclusive: -n, -t, -l
 #%end
 
 #%flag
@@ -60,7 +60,7 @@
 
 #%flag
 #%  key: e
-#%  description: External GeoTiFF files as pseudo GRASS raster maps
+#%  description: Link a scene's GeoTIFF band as a pseudo GRASS raster map
 #%  guisection: Input
 #%end
 
@@ -170,7 +170,7 @@
 #%end
 
 #%rules
-#%  requires: output_tgis, -t
+#%  requires_all: output_tgis, -t
 #%end
 
 #%option
@@ -294,8 +294,9 @@ def get_name_band(scene, filename):
     absolute_filename = os.path.join(scene, filename)
 
     # detect image quality strings in filenames
+    # source: https://stackoverflow.com/q/7351744/1172302
     if any(string in absolute_filename for string in IMAGE_QUALITY_STRINGS):
-        name = "".join((os.path.splitext(absolute_filename)[0].split('_'))[1::2])
+        name = "".join((os.path.splitext(absolute_filename)[0].rsplit('_'))[-1])
 
     # keep only the last part of the filename
     else:
@@ -714,13 +715,18 @@ def main():
     remove_untarred = flags['r']
     list_bands = flags['l']
     count_scenes = flags['n']
+    
     global skip_microseconds
     skip_microseconds = flags['m']
+    
     global do_not_timestamp
     do_not_timestamp = flags['d']
+    
     tgis = flags['t']
+    
     global force_timestamp
     force_timestamp = flags['f']
+
     global one_mapset
     one_mapset = flags['1']
 
@@ -729,11 +735,13 @@ def main():
     pool = options['pool']
     bands = options['band']
     timestamp = options['timestamp']
+    
     global timestamps
     timestamps = []
 
     global tgis_output
     tgis_output = options['output_tgis']
+    
     memory = options['memory']
 
     if list_bands or count_scenes:  # don't import
