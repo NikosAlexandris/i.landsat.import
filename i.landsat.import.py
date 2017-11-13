@@ -139,6 +139,17 @@
 #%end
 
 #%option
+#% key: set
+#% key_desc: spectral subset
+#% label: One or multiple subsets from a Landsat set of spectral bands
+#% description: Subsets of Landsat's set of spectral bands
+#% descriptions: oli;Operational Land Imager, multi-spectral bands 1, 2, 3, 4, 5, 6, 7, 8, 9;tirs;Thermal Infrared Sensor, thermal bands 10, 11;bqa;Band Quality Assessment layer
+#% options: oli, tirs, bqa
+#% multiple: yes
+#% required: no
+#%end
+
+#%option
 #% key: mapset
 #% key_desc: name
 #% label: Mapset to import all scenes in
@@ -262,6 +273,13 @@ def find_existing_band(band):
     else:
         return False
 
+def scene_is_empty(scene):
+    """
+    What to do when an empty scene directory is found?
+    Fail and indicate there is a problem.
+    """
+    pass
+
 def extract_tgz(tgz):
     """
     Decompress and unpack a .tgz file
@@ -338,9 +356,15 @@ def get_metafile(scene, tgis):
     """
     Get metadata MTL filename
     """
-    metafile = glob.glob(scene + '/*MTL.txt')[0]
-    metafile_basename = os.path.basename(metafile)
-    scene_basename = os.path.basename(scene)
+    metafile = str()
+    if glob.glob(scene + '/*MTL.txt') == []:
+        # grass.warning(_("Found an empty scene directory! Passing..."))
+        grass.fatal(_("Found an empty scene directory! Aborting import process."))
+        pass
+    else:
+        metafile = glob.glob(scene + '/*MTL.txt')[0]
+        metafile_basename = os.path.basename(metafile)
+        scene_basename = os.path.basename(scene)
     return metafile
 
 def is_mtl_in_cell_misc(mapset):
