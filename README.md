@@ -30,12 +30,12 @@ Multiple scenes are imported in individual Mapsets. That is bands of one scene,
 are imported in one indepenendet Mapset. If requested, all scenes are imported
 in one single Mapset. [flag `-1` and option `mapset`]. For the latter, band
 names are prefixed with each scene's unique identifier. This may ease off
-building time series via GRASS' temporal `t.`-modules.
+building time series via GRASS' temporal `t.*` modules.
 
 The module has got some handy skills to count the number of scenes inside a
 given `pool` directory [flag `-n`], list basic metadata and bands that pertain
 to each scene [flag `-l`] as well as print, or export in a file, a valid TGIS
-list of timestamps (one to use along with `t.register`) [flag `-t`].
+list of timestamps, one to use along with `t.register` [flag `-t`].
 
 Examples
 ========
@@ -43,9 +43,11 @@ Examples
 In the following examples, work is demoed with the LC81840332014146LGN00
 (decompressed and unpacked) scene.
 
-First grass-y things first: create a Location for this scene. It lies inside the
-WRS2 tile Path 184 and Row 033, which is covered by UTM zone 34N. This is done
-automagically by using the geo-meta-tags that are part of all GeoTIFF files.
+First grass-y things first: create a Location for this scene. Remember, a
+Location is defined by one and only spatial reference system. The scene in
+question lies inside the WRS2 tile Path 184 and Row 033, which is covered by
+UTM zone 34N. This is done automagically by using the geo-meta-tags that are
+part of a GeoTIFF file.
 
 ```
 grass72 -c LC81840332014146LGN00_B1.TIF /grassdb/l8/
@@ -94,23 +96,24 @@ cumbersome].
 We can import the scene in its own Mapset (use --v for verbosity) and request
 from the module to *not* copy the MTL file under `cell_misc`
 ```
-i.landsat.import -m LC81840332014146LGN00
+i.landsat.import -c LC81840332014146LGN00
 ```
 
 By the way, the module will create a new Mapset, named after the directory
-that contains the requested scene. Re-running the import command for the same
+that contains the requested scene. Expectedly, the directory is named after the
+scene's unique identifier. Re-running the import command for the same
 scene, will simply pass the step of recreating the existing Mapset.
 
-If decision is made afterwards to copy the MTL file, we may re-run the import
-process. The `-s` flag is therefore useful to skip over existing bands which
-otherwise would break the execution. As well, it helps in cases where some
-bands have been removed.
+To create a copy of the MTL file under `cell_misc`, at a later stage, we may
+re-run the import process. The `-s` flag is therefore useful to skip over
+existing bands which otherwise would break the execution. As well, it helps in
+cases where some bands have been removed.
 
 ```
 i.landsat.import LC81840332014146LGN00 -s --v
 ```
 
-Noteworthy is the memory option which is passed, internally, to `r.in.gdal`,
+Noteworthy is the `memory` option. It is passed, internally, to `r.in.gdal`,
 the actual importer. [see also `r.in.gdal`]
 
 As usual in GRASS GIS, the `--o` flag is always handy in case overwriting
@@ -119,7 +122,7 @@ existing maps is desired.
 ### Link to GeoTIFF files
 
 Using the `-e` flags, the module calls internally `r.external`. GeoTIFF files
-will be linked directly to GRASS' data base via pseudo GRASS raster maps.
+will be linked to GRASS' data base via pseudo GRASS raster maps.
 
 ## Multiples scenes
 
@@ -137,7 +140,7 @@ remove the respective Mapset and and re-import everything. Or, we may use the
 i.landsat.import scene=LC81840332014146LGN00,LC81840332014226LGN00 --v -s
 ```
 
-If we have many scenes, we can avoid typing or collecting all scene identifiers
+In case of many scenes, we can avoid typing or collecting all scene identifiers
 to feed the `scene` option and collect all scenes under one directory. This one
 directory can be fed to the module's `pool` option. For testing, we instruct
 the following and expect to get the list of (already existing band scenes, each
@@ -146,8 +149,8 @@ in its own Mapset)
 i.landsat.import pool=scenes --v -s
 ```
 
-The module will fail if, among the scenes, it will detect one with a projectio
-that does not match the one of the current Location! Moving the scene out of
+The module will fail if, among the scenes, it will detect one with a projection
+that does not match the current Location! Moving the scene out of
 the "pool" directory, will let the module (re-)run successfull. If, however,
 the user knows that the suspicious scene is indeed in the same projection, as
 the Location's one, the -o flag will override this check.
@@ -156,7 +159,7 @@ the Location's one, the -o flag will override this check.
 ### All in one Mapset
 
 Assuming we have in addition the scene LC81840332014226LGN00, we can list
-them
+out their components
 ```
 i.landsat.import scene=LC81840332014146LGN00,LC81840332014226LGN00 -l
 ```
@@ -231,17 +234,26 @@ And more to add...
 To Do
 =====
 
+[High]
+
+- Test for empty Landsat scene directories and corrupted files. Act upon
+accordingly. At the moment, a corrupted Landsat GeoTIFF will break the import
+process. This will, subsequently, brake any scripted workflow in which
+`i.landsat.import` is part of. 
+
+[Low]
+
 - Complete README.md, update/improve manual
+- Discuss about the import in multiple Mapsets (see Stefan's B. comment)
 - Ideally, get rid of all Landsat-meta related stuff, develop further a
 Landsat(8) class with getters and setters.
 - Actually, the whole date-time parsing needs to be redone, from scratch.
 Better to use datetime objects.
 - Note, microseconds are ignored in the TGIS world
-- `tgis` output file to collect timestamps suitable for t.register yet to be
-implemented.
 - Add `bands` option, to selectively import specified bands
-- Test for range of input date, time, timezone
-- What other meta can be transferred from the MTL file?
+- Test for range of input date, time, timezone 
+- What other meta can be transferred from the MTL file? Why not all! As in
+https://github.com/NikosAlexandris/i.landsat8.swlst/blob/master/landsat8_mtl.py?
 
 Notes
 =====
