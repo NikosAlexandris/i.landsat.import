@@ -139,11 +139,11 @@
 #%end
 
 #%option
-#% key: set
+#% key: spectral_set
 #% key_desc: spectral subset
 #% label: One or multiple subsets from a Landsat set of spectral bands
 #% description: Subsets of Landsat's set of spectral bands
-#% descriptions: oli;Operational Land Imager, multi-spectral bands 1, 2, 3, 4, 5, 6, 7, 8, 9;tirs;Thermal Infrared Sensor, thermal bands 10, 11;bqa;Band Quality Assessment layer
+#% descriptions: oli;Operational Land Imager, multi-spectral bands 1, 2, 3, 4, 5, 6, 7, 8, 9;tirs;Thermal Infrared Sensor, thermal bands 10 and 11;bqa;Band Quality Assessment layer
 #% options: oli, tirs, bqa
 #% multiple: yes
 #% required: no
@@ -535,7 +535,7 @@ def print_timestamp(scene, timestamp, tgis=False):
     """
     date = timestamp['date']
     date_Ymd = datetime.strptime(date, "%Y-%m-%d")
-    date_dbY = datetime.strftime(date_Ymd, "%d %b %Y")
+    date_tgis = datetime.strftime(date_Ymd, "%d %b %Y")
 
     hours = str(timestamp['hours'])
     minutes = str(timestamp['minutes'])
@@ -551,7 +551,8 @@ def print_timestamp(scene, timestamp, tgis=False):
     time = datetime.strptime(time, string_parse_time)
     time = datetime.strftime(time, string_parse_time)
 
-    message = 'Date\t\tTime\n\n{date}\t{time} {timezone}\n\n'
+    message = 'Date\t\tTime\n'
+    message += '\t{date}\t{time} {timezone}\n\n'
 
     # if -t requested
     if tgis:
@@ -564,7 +565,7 @@ def print_timestamp(scene, timestamp, tgis=False):
         if prefix:
             prefix = options['prefix']
         # message = '{p}{s}|{d} {t} {tz}'.format(s=scene, p=prefix, d=date, t=time, tz=timezone)
-        message = '{p}{s}|{d} {t}'.format(s=scene, p=prefix, d=date, t=time)
+        message = '{p}{s}|{d} {t}'.format(s=scene, p=prefix, d=date_tgis, t=time)
 
         # add to timestamps
         if tgis_output:
@@ -572,7 +573,7 @@ def print_timestamp(scene, timestamp, tgis=False):
             timestamps.append(message)
 
     if not tgis:
-        message = message.format(date=date_dbY, time=time, timezone=timezone)
+        message = message.format(date=date, time=time, timezone=timezone)
     g.message(_(message))
 
 def set_timestamp(band, timestamp):
@@ -682,9 +683,21 @@ def import_geotiffs(scene, bands, mapset, memory, list_bands, tgis = False):
                 parameters['band'] = bands
             # -------------------------------------------------------------
 
+            # -------------------------------------------------------------
+            # Make this flexible! In example, use "sets" and allow for
+            # selection of band=1,2,3 and spectral_set=tirs
+            # Makes sense?
+            if spectral_set and not bands:
+                if spectral_set == 'oli':
+                    parameters['band'] = '1,2,3,4,5,6,7,8,9'
+                if spectral_set == 'tirs':
+                    parameters['band'] = "10,11"
+                if spectral_set == 'bqa':
+                    parameters['band'] = 'bqa'
+            # ------------------------------------------------------------
+
             if override_projection:
                 parameters['flags'] += 'o'
-
 
             # create Mapset of interest, if it doesn't exist
             run('g.mapset', flags = 'c', mapset = mapset, stderr = open(os.devnull, 'w'))
@@ -739,15 +752,15 @@ def main():
     remove_untarred = flags['r']
     list_bands = flags['l']
     count_scenes = flags['n']
-    
+
     global skip_microseconds
     skip_microseconds = flags['m']
-    
+
     global do_not_timestamp
     do_not_timestamp = flags['d']
-    
+
     tgis = flags['t']
-    
+
     global force_timestamp
     force_timestamp = flags['f']
 
@@ -758,14 +771,15 @@ def main():
     scene = options['scene']
     pool = options['pool']
     bands = options['band']
+    spectral_set = options['spectral_set']
     timestamp = options['timestamp']
-    
+
     global timestamps
     timestamps = []
 
     global tgis_output
     tgis_output = options['output_tgis']
-    
+
     memory = options['memory']
 
     if list_bands or count_scenes:  # don't import
