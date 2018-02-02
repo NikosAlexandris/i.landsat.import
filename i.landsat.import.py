@@ -535,7 +535,7 @@ def print_timestamp(scene, timestamp, tgis=False):
     """
     date = timestamp['date']
     date_Ymd = datetime.strptime(date, "%Y-%m-%d")
-    date_dbY = datetime.strftime(date_Ymd, "%d %b %Y")
+    date_tgis = datetime.strftime(date_Ymd, "%d %b %Y")
 
     hours = str(timestamp['hours'])
     minutes = str(timestamp['minutes'])
@@ -551,7 +551,8 @@ def print_timestamp(scene, timestamp, tgis=False):
     time = datetime.strptime(time, string_parse_time)
     time = datetime.strftime(time, string_parse_time)
 
-    message = 'Date\t\tTime\n\n{date}\t{time} {timezone}\n\n'
+    message = 'Date\t\tTime\n'
+    message += '\t{date}\t{time} {timezone}\n\n'
 
     # if -t requested
     if tgis:
@@ -564,7 +565,7 @@ def print_timestamp(scene, timestamp, tgis=False):
         if prefix:
             prefix = options['prefix']
         # message = '{p}{s}|{d} {t} {tz}'.format(s=scene, p=prefix, d=date, t=time, tz=timezone)
-        message = '{p}{s}|{d} {t}'.format(s=scene, p=prefix, d=date, t=time)
+        message = '{p}{s}|{d} {t}'.format(s=scene, p=prefix, d=date_tgis, t=time)
 
         # add to timestamps
         if tgis_output:
@@ -572,7 +573,7 @@ def print_timestamp(scene, timestamp, tgis=False):
             timestamps.append(message)
 
     if not tgis:
-        message = message.format(date=date_dbY, time=time, timezone=timezone)
+        message = message.format(date=date, time=time, timezone=timezone)
     g.message(_(message))
 
 def set_timestamp(band, timestamp):
