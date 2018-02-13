@@ -501,7 +501,6 @@ def get_timestamp(scene, tgis):
 
                     # split string, convert to int later -- This Is Not Right
                     hours, minutes, seconds = time.split('.')[0].split(':')
-                    seconds = int(seconds)
 
                     if not skip_microseconds:
                         # round microseconds to six digits!
@@ -509,6 +508,7 @@ def get_timestamp(scene, tgis):
                         microseconds = round((microseconds / 10000000), 6)
 
                         # add to seconds
+                        seconds = int(seconds)
                         seconds += microseconds
                         seconds = format(seconds, '.6f')
                         seconds = add_leading_zeroes(seconds, 2)
