@@ -6,31 +6,43 @@ i.landsat.import
 *i.landsat.import* is a GRASS-GIS module that imports Landsat satellite imagery
 scenes as native GRASS raster maps in its data base.
 
+### Landsat scenes
+
 Landsat scenes can be acquired in two forms. One is a (packed and compressed)
 `tar.gz` file. Another is an (uncompressed and unpacked) directory containing
 the multispectral band and thermal channel acquisitions in form of GeoTiFF
 files. Albeit, along with various metadata. The module treats both forms.
 [option `scene`, single or multiple inputs]
 
+### Scene metadata
+
 The MTL metadata file is copied under the target mapset's `cell_misc`
 directory. This can be cancelled by using the `-c` flag. Date (year, month,
 day) and time (hours, minutes, seconds, timezone) of acquisitions are
 transferred to each imported band. [see `r.timestamp`]
 
+### Link to GeoTIFF files
+
 Alternatively, the module creates pseudo GRASS raster maps via the `-e` flag.
 Instead of creating native GRASS raster maps, it links directly to the original
 GeoTIFF files. [see `r.external`]
+
+### Re-run the import script
 
 For whatsoever might be the reason, it is possible to rerun the import process.
 Existing bands may be retained by skipping the import via the `-s` flag.
 At the same time, for bands which might lack of a timestamp, time stamping may
 be forced via the `-f` flag.
 
+### One or many mapsets
+
 Multiple scenes are imported in individual Mapsets. That is bands of one scene,
 are imported in one indepenendet Mapset. If requested, all scenes are imported
 in one single Mapset. [flag `-1` and option `mapset`]. For the latter, band
 names are prefixed with each scene's unique identifier. This may ease off
 building time series via GRASS' temporal `t.*` modules.
+
+### TGIS compliant list of timestamps
 
 The module has got some handy skills to count the number of scenes inside a
 given `pool` directory [flag `-n`], list basic metadata and bands that pertain
