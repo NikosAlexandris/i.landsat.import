@@ -146,7 +146,7 @@
 #% label: One or multiple subsets from a Landsat set of spectral bands
 #% description: Subsets of Landsat's set of spectral bands
 #% descriptions: oli;Operational Land Imager, multi-spectral bands 1, 2, 3, 4, 5, 6, 7, 8, 9;tirs;Thermal Infrared Sensor, thermal bands 10, 11;bqa;Band Quality Assessment layer
-#% options: all, oli, tirs, bqa
+#% options: all, bqa, coastal, infrared, ndvi, oli, panchromatic, tirs, visible
 #% multiple: yes
 #% required: no
 #%end
@@ -380,15 +380,11 @@ LANDSAT_BANDS = {
         'bqa': ['QA'],
         'oli': [1, 2, 3, 4, 5, 6, 7, 8, 9],
         'tirs': [10, 11],
-        'etm+': (1, 2, 3, 4, 5, 6, 7, 8),
-        'tm': (1, 2, 3, 4, 5, 6, 7),
-        'mss': {
-                1 : (5, 6, 7, 8),
-                2 : (5, 6, 7, 8),
-                3 : (5, 6, 7, 8),
-                4 : (1, 2, 3, 4),
-                5 : (1, 2, 3, 4)
-                }
+        'coastal': 1,
+        'visible': [2, 3, 4],
+        'ndvi': [4,5],
+        'infrared': [5, 6, 7, 9],
+        'panchromatic': 8
         }
 BAND_PRECOLLECTION_RE = '[0-9Q][01A]?'
 BAND_RE = '[0-9Q][01A]?'
