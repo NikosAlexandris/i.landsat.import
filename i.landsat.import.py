@@ -221,19 +221,29 @@ import grass.script as grass
 from grass.exceptions import CalledModuleError
 from grass.pygrass.modules.shortcuts import general as g
 from grass.pygrass.modules.shortcuts import raster as r
-
-from constants import (
-    MONTHS,
-    DATE_STRINGS,
-    TIME_STRINGS,
-    ZERO_TIMEZONE,
-    GRASS_VERBOSITY_LELVEL_3,
-    IMAGE_QUALITY_STRINGS,
-    QA_STRING,
-    MTL_STRING,
-    HORIZONTAL_LINE,
-    MEMORY_DEFAULT,
-)
+#from constants import (
+#    MONTHS,
+#    DATE_STRINGS,
+#    TIME_STRINGS,
+#    ZERO_TIMEZONE,
+#    GRASS_VERBOSITY_LELVEL_3,
+#    IMAGE_QUALITY_STRINGS,
+#    QA_STRING,
+#    MTL_STRING,
+#    HORIZONTAL_LINE,
+#    MEMORY_DEFAULT,
+#)
+from identifiers import LANDSAT_IDENTIFIERS
+from constants import MEMORY_DEFAULT
+from constants import DATE_STRINGS
+from constants import TIME_STRINGS
+from constants import ZERO_TIMEZONE
+from identifiers import GEOTIFF_EXTENSION
+from constants import IMAGE_QUALITY_STRINGS
+from constants import MTL_STRING
+from constants import QA_STRING
+from constants import MONTHS
+from constants import HORIZONTAL_LINE
 
 # environment variables
 grass_environment = grass.gisenv()
