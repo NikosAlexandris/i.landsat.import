@@ -392,6 +392,9 @@ def list_files_in_tar(tgz):
     members = tar.getnames()
 
     # print out
+    members = """
+    {}
+    """.format('\n'.join(members[1:]))
     g.message(_(members))
 
 def extract_tgz(tgz):
