@@ -479,7 +479,7 @@ LANDSAT_IDENTIFIERS = {
             },
         'collection': {
             'description': 'Collection number',
-            'identifiers' : COLLECTION_NUMBERS,
+            'identifiers': COLLECTION_NUMBERS,
             'regular_expression': COLLECTION_NUMBER_RE
             },
         'category': {
