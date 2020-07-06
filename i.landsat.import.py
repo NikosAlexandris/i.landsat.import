@@ -319,6 +319,10 @@ def retrieve_selected_filenames(bands, scene, regular_expression):
     """
     Retrieve filenames of user requested bands from a Landsat scene
 
+    To Do
+    -----
+    Fix: requires a fix for 'tar.gz' files, i.e. if 'scene' = '*.tar.gz'!
+
     Parameters
     ----------
     bands :
