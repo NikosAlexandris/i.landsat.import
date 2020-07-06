@@ -615,8 +615,9 @@ def get_timestamp(scene, tgis):
                     if line.endswith('Z'):
                         date_time['timezone'] = ZERO_TIMEZONE
 
-                    # remove 'Z' and split the string before & after ':'
-                    time = line.strip().split('=')[1].strip().translate(None, 'Z')
+                    # remove 'Z' and split the string before & after '='
+                    translation_table = str.maketrans('', '', 'Z')
+                    time = line.strip().split('=')[1].strip().translate(translation_table)
 
                     # split string, convert to int later -- This Is Not Right
                     hours, minutes, seconds = time.split('.')[0].split(':')
