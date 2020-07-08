@@ -1198,7 +1198,10 @@ def main():
 
     # identify product collection
     product_collection = identify_product_collection(os.path.basename(scene))
-    regular_expression_template = LANDSAT_IDENTIFIERS['band_template'][product_collection]
+    try:
+        regular_expression_template = LANDSAT_IDENTIFIERS['band_template'][product_collection]
+    except:
+        grass.fatal(_("The given scene identifier does not match any known Landsat product file name pattern!"))
 
     pool = options['pool']
     spectral_sets = options['set']
