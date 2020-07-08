@@ -1312,7 +1312,7 @@ def main():
 
     # output tgis compliant list of maps names and corresponding timestamps
     if tgis and tgis_output:
-        output_file = file(tgis_output, 'w')
+        output_file = open(tgis_output, 'w')
 
         for timestamp in timestamps:
             timestamp += '\n'
