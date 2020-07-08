@@ -1,6 +1,3 @@
-#!/usr/bin/python
-# -*- coding: utf-8 -*-
-
 # Following the order of Landsat Identifiers
 
 # scene and product identifiers, regular expression patterns and templates
