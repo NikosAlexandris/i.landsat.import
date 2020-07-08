@@ -233,17 +233,17 @@ from grass.pygrass.modules.shortcuts import raster as r
 #    HORIZONTAL_LINE,
 #    MEMORY_DEFAULT,
 #)
-from identifiers import LANDSAT_IDENTIFIERS
 from constants import MEMORY_DEFAULT
 from constants import DATE_STRINGS
 from constants import TIME_STRINGS
 from constants import ZERO_TIMEZONE
-from identifiers import GEOTIFF_EXTENSION
 from constants import IMAGE_QUALITY_STRINGS
 from constants import MTL_STRING
 from constants import QA_STRING
 from constants import MONTHS
 from constants import HORIZONTAL_LINE
+from identifiers import LANDSAT_IDENTIFIERS
+from identifiers import GEOTIFF_EXTENSION
 
 # environment variables
 grass_environment = grass.gisenv()
