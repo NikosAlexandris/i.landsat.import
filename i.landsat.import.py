@@ -921,7 +921,7 @@ def main():
     scene = options['scene']
 
     # identify product collection
-    product_collection = identify_product_collection(scene)
+    product_collection = identify_product_collection(os.path.basename(scene))
     regular_expression_template = LANDSAT_IDENTIFIERS['band_template'][product_collection]
 
     pool = options['pool']
