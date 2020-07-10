@@ -336,7 +336,7 @@ def retrieve_selected_filenames(bands, scene, regular_expression):
     -------
         ...
     """
-    band_template = identify_product_collection(scene)
+    band_template = identify_product_collection(os.path.basename(scene))
     requested_filenames = []
     for band in bands:
         for filename in os.listdir(scene):
