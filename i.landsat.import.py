@@ -144,9 +144,9 @@
 #% key: set
 #% key_desc: spectral subset
 #% label: One or multiple subsets from a Landsat set of spectral bands
-#% description: Subsets of Landsat's set of spectral bands
+#% description: Subsets or index-specific Landsat spectral bands | Mosts subsets currently implemented for Landsat 8
 #% descriptions: oli;Operational Land Imager, multi-spectral bands 1, 2, 3, 4, 5, 6, 7, 8, 9;tirs;Thermal Infrared Sensor, thermal bands 10, 11;bqa;Band Quality Assessment layer
-#% options: all, bqa, coastal, infrared, ndvi, oli, panchromatic, tirs, visible
+#% options: all, arvi, avi, bqa, bsi, evi, gci, gndvi, infrared, msi, nbr, ndgi, ndmi, ndsi, ndvi, ndwi, oli, panchromatic, savi, shortwave, sipi, tirs, visible
 #% multiple: yes
 #% required: no
 #%end
@@ -374,14 +374,28 @@ MSS45 = {
 LANDSAT_BANDS_ = {
         'oli/tirs': {
             'all': [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 'QA'],
+            'arvi': [2,4,5],
+            'avi': [4,5],
+            'bqa': ['QA'],
+            'bsi': [2,4,5,6],
+            'evi': [2,4,5],
+            'gci': [3,5],
+            'gndvi': [3, 5],
+            'infrared': [5, 6, 7],
+            'msi': [5,6],
+            'nbr': [5,7],
+            'ndgi': [3,4],
+            'ndmi': [5,6],
+            'ndsi': [3,6],
+            'ndvi': [4,5],
+            'ndwi': [3,5],
             'oli': [1, 2, 3, 4, 5, 6, 7, 8, 9],
+            'panchromatic': 8,
+            'savi': [4,5],
+            'shortwave': [6, 7],
+            'sipi': [2,4,5],
             'tirs': [10, 11],
             'visible': [1, 2, 3, 4],
-            'ndvi': [4,5],
-            'infrared': [5, 6, 7],
-            'shortwave': [6, 7],
-            'panchromatic': 8,
-            'bqa': ['QA']
             },
         'etm+': {
             'all': (1, 2, 3, 4, 5, 6, 7, 8),
