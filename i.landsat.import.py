@@ -288,7 +288,7 @@ def identify_product_collection(scene):
             if re.match(template, scene):
                 return template_key
         except:
-            g.message(_("No match"))
+            g.fatal(_("No match"))
 
 def get_path_to_cell_misc(mapset):
     """
