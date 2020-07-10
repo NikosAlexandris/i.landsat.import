@@ -358,7 +358,7 @@ def retrieve_selected_sets_of_bands(spectral_sets, scene):
         bands = list(LANDSAT_BANDS[spectral_set])
         requested_bands.extend(bands)
 
-    return requested_bands
+    return list(set(requested_bands))
 
 
 def sort_list_of_bands(bands):
