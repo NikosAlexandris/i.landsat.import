@@ -134,6 +134,7 @@ LANDSAT_BANDS = {
         'coastal': 1,
         'visible': [2, 3, 4],
         'ndvi': [4,5],
+        'ndsi': [3,6],
         'infrared': [5, 6, 7, 9],
         'panchromatic': 8
         }
