@@ -241,6 +241,9 @@ from constants import ZERO_TIMEZONE
 from identifiers import LANDSAT_BANDS
 from identifiers import LANDSAT_IDENTIFIERS
 from identifiers import GEOTIFF_EXTENSION
+from metadata import get_metafile
+from metadata import is_mtl_in_cell_misc
+from metadata import copy_mtl_in_cell_misc
 
 # helper functions
 def run(cmd, **kwargs):
