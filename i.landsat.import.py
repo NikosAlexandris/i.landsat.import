@@ -925,7 +925,6 @@ def main():
         grass.fatal(_("The given scene identifier does not match any known Landsat product file name pattern!"))
 
     pool = options['pool']
-    spectral_sets = options['set']
 
     if options['bands']:
         bands = options['bands'].split(',')
@@ -937,9 +936,9 @@ def main():
         bands = 'all'
 
     # This will fail is the 'scene=' is a compressed one, i.e. tar.gz # FIXME
-    if spectral_sets:
+    if options['set']:
         # bands = list(LANDSAT_BANDS[spectral_set])
-        if len(spectral_sets) > 1:
+        if len(options['set']) > 1:
             spectral_sets = options['set'].split(',')
 
         bands = retrieve_selected_sets_of_bands(
