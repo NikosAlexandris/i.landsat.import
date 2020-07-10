@@ -403,7 +403,7 @@ def extract_tgz(tgz):
     # extract files indide the scene directory
     tar.extractall(path=tgz_base)
 
-def get_name_band(scene, filename):
+def get_name_band(scene, filename, single_mapset=False):
     """
     """
     absolute_filename = os.path.join(scene, filename)
@@ -444,7 +444,7 @@ def get_name_band(scene, filename):
         band = int(name[-1:])
 
     # one Mapset requested? prefix raster map names with scene id
-    if one_mapset:
+    if single_mapset:
         name = os.path.basename(scene) + '_' + name
 
     return name, band
@@ -641,7 +641,15 @@ def set_timestamp(band, timestamp):
     # stamp bands
     grass.run_command('r.timestamp', map=band, date=timestamp, verbose=True)
 
-def import_geotiffs(scene, bands, mapset, memory, list_bands, tgis = False):
+def import_geotiffs(
+        scene,
+        bands,
+        mapset,
+        memory,
+        single_mapset=False,
+        list_bands=False,
+        tgis=False,
+    ):
     """
     Imports all bands (GeoTIF format) of a Landsat scene be it Landsat 5,
     7 or 8.  All known naming conventions are respected, such as "VCID" and
@@ -672,7 +680,7 @@ def import_geotiffs(scene, bands, mapset, memory, list_bands, tgis = False):
     timestamp = get_timestamp(scene, tgis)
     print_timestamp(os.path.basename(scene), timestamp, tgis)
 
-    if not one_mapset:
+    if not single_mapset:
         # set mapset from scene name
         mapset = os.path.basename(scene)
 
@@ -707,7 +715,7 @@ def import_geotiffs(scene, bands, mapset, memory, list_bands, tgis = False):
             continue
 
         # use the full path name to the file
-        name, band = get_name_band(scene, filename)
+        name, band = get_name_band(scene, filename, single_mapset)
         band_title = 'band {band}'.format(band = band)
 
         if not tgis:
@@ -799,7 +807,13 @@ def import_geotiffs(scene, bands, mapset, memory, list_bands, tgis = False):
 
     # copy MTL
     if not list_bands and not tgis:
-        copy_mtl_in_cell_misc(scene, mapset, tgis, copy_mtl)
+        copy_mtl_in_cell_misc(
+                scene,
+                mapset,
+                tgis,
+                single_mapset,
+                copy_mtl
+        )
 
 def main():
 
@@ -826,8 +840,7 @@ def main():
     global force_timestamp
     force_timestamp = flags['f']
 
-    global one_mapset
-    one_mapset = flags['1']
+    single_mapset = flags['1']
 
     # options
     scene = options['scene']
@@ -878,7 +891,7 @@ def main():
         os.environ['GRASS_VERBOSE'] = '3'
 
     # if a single mapset requested
-    if one_mapset:
+    if single_mapset:
         mapset = options['mapset']
 
     else:
@@ -906,8 +919,10 @@ def main():
                         bands,
                         mapset,
                         memory,
+                        single_mapset,
                         list_bands,
-                        tgis)
+                        tgis,
+                )
 
     # import single or multiple given scenes
     if scene:
@@ -930,8 +945,10 @@ def main():
                     bands,
                     mapset,
                     memory,
+                    single_mapset,
                     list_bands,
-                    tgis)
+                    tgis,
+            )
 
             if remove_untarred:
                 message = 'Removing unpacked source directory {s}'
