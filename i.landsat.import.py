@@ -820,8 +820,6 @@ def import_geotiffs(
 
 def main():
 
-    global GISDBASE, LOCATION, MAPSET, CELL_MISC
-    global link_geotiffs, copy_mtl, override_projection, skip_import, mapset
 
     # flags
     link_geotiffs = flags['e']
@@ -832,15 +830,12 @@ def main():
     list_bands = flags['l']
     count_scenes = flags['n']
 
-    global skip_microseconds
     skip_microseconds = flags['m']
 
-    global do_not_timestamp
     do_not_timestamp = flags['d']
 
     tgis = flags['t']
 
-    global force_timestamp
     force_timestamp = flags['f']
 
     single_mapset = flags['1']
@@ -882,10 +877,8 @@ def main():
 
     timestamp = options['timestamp']
 
-    global timestamps
     timestamps = []
 
-    global tgis_output
     tgis_output = options['output_tgis']
 
     memory = options['memory']
