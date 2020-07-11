@@ -244,6 +244,8 @@ from identifiers import GEOTIFF_EXTENSION
 from metadata import get_metafile
 from metadata import is_mtl_in_cell_misc
 from metadata import copy_mtl_in_cell_misc
+grass_environment = grass.gisenv()
+MAPSET = grass_environment['MAPSET']
 
 # helper functions
 def run(cmd, **kwargs):
