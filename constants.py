@@ -11,4 +11,3 @@ QA_STRING = 'QA'  # Merge with above?  # FIXME
 MTL_STRING = 'MTL'
 HORIZONTAL_LINE = 79 * '-' + '\n'
 MEMORY_DEFAULT = '300'
-

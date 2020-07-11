@@ -8,8 +8,6 @@ from constants import HORIZONTAL_LINE
 grass_environment = grass.gisenv()
 GISDBASE = grass_environment['GISDBASE']
 LOCATION = grass_environment['LOCATION_NAME']
-
-# path to "cell_misc"
 CELL_MISC = 'cell_misc'
 
 
