@@ -147,6 +147,7 @@
 #% description: Subsets or index-specific Landsat spectral bands | Mosts subsets currently implemented for Landsat 8
 #% descriptions: oli;Operational Land Imager, multi-spectral bands 1, 2, 3, 4, 5, 6, 7, 8, 9;tirs;Thermal Infrared Sensor, thermal bands 10, 11;bqa;Band Quality Assessment layer
 #% options: all, arvi, avi, bqa, bsi, evi, gci, gndvi, infrared, msi, nbr, ndgi, ndmi, ndsi, ndvi, ndwi, oli, panchromatic, savi, shortwave, sipi, tirs, visible
+
 #% multiple: yes
 #% required: no
 #%end
@@ -241,6 +242,8 @@ from identifiers import GEOTIFF_EXTENSION
 from metadata import get_metafile
 from metadata import is_mtl_in_cell_misc
 from metadata import copy_mtl_in_cell_misc
+from timestamp import get_timestamp
+
 grass_environment = grass.gisenv()
 MAPSET = grass_environment['MAPSET']
 
@@ -459,6 +462,8 @@ def import_geotiffs(
         single_mapset=False,
         list_bands=False,
         tgis=False,
+        timestamp=None,
+        skip_microseconds=False,
     ):
     """
     Imports all bands (GeoTIF format) of a Landsat scene be it Landsat 5,
@@ -487,8 +492,11 @@ def import_geotiffs(
         Boolean True or False
     """
 
-    timestamp = get_timestamp(scene, tgis)
-    print_timestamp(os.path.basename(scene), timestamp, tgis)
+    if not timestamp:
+        timestamp = get_timestamp(scene, tgis, skip_microseconds)
+        # date_time = validate_date_time_string(date_time)
+        timestamp_message = "(set manually)"
+        print_timestamp(os.path.basename(scene), timestamp, tgis)
 
     if not single_mapset:
         # set mapset from scene name
@@ -627,7 +635,6 @@ def import_geotiffs(
 
 def main():
 
-
     # flags
     link_geotiffs = flags['e']
     copy_mtl = not flags['c']
@@ -638,11 +645,8 @@ def main():
     count_scenes = flags['n']
 
     skip_microseconds = flags['m']
-
     do_not_timestamp = flags['d']
-
     tgis = flags['t']
-
     force_timestamp = flags['f']
 
     single_mapset = flags['1']
@@ -683,7 +687,6 @@ def main():
                 regular_expression_template)
 
     timestamp = options['timestamp']
-
     timestamps = []
 
     tgis_output = options['output_tgis']
@@ -725,6 +728,8 @@ def main():
                         single_mapset,
                         list_bands,
                         tgis,
+                        timestamp,
+                        skip_microseconds,
                 )
 
     # import single or multiple given scenes
@@ -744,13 +749,16 @@ def main():
                     grass.verbose(_(message))
                     del(message)
 
-            import_geotiffs(landsat_scene,
+            import_geotiffs(
+                    landsat_scene,
                     bands,
                     mapset,
                     memory,
                     single_mapset,
                     list_bands,
                     tgis,
+                    timestamp,
+                    skip_microseconds,
             )
 
             if remove_untarred:
