@@ -229,15 +229,12 @@ import grass.script as grass
 from grass.exceptions import CalledModuleError
 from grass.pygrass.modules.shortcuts import general as g
 from grass.pygrass.modules.shortcuts import raster as r
-from constants import DATE_STRINGS
 from constants import HORIZONTAL_LINE
 from constants import IMAGE_QUALITY_STRINGS
 from constants import MEMORY_DEFAULT
 from constants import MONTHS
 from constants import MTL_STRING
 from constants import QA_STRING
-from constants import TIME_STRINGS
-from constants import ZERO_TIMEZONE
 from identifiers import LANDSAT_BANDS
 from identifiers import LANDSAT_IDENTIFIERS
 from identifiers import GEOTIFF_EXTENSION
