@@ -71,7 +71,7 @@ def copy_mtl_in_cell_misc(
 
     else:
         if copy_mtl:
-            metafile = get_metafile(scene, tgis)
+            metafile = get_metafile(scene)
             shutil.copy(metafile, path_to_cell_misc)
             if glob.glob(path_to_cell_misc):
                 # copy the metadata file -- Better: check if really copied!
