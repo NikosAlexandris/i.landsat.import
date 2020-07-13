@@ -269,121 +269,104 @@ def main():
     # options
     prefix = options['prefix']
     scene = options['scene']
-
-    # identify product collection
-    product_collection = identify_product_collection(os.path.basename(scene))
-    try:
-        regular_expression_template = LANDSAT_IDENTIFIERS['band_template'][product_collection]
-    except:
-        grass.fatal(_("The given scene identifier does not match any known Landsat product file name pattern!"))
-
     pool = options['pool']
     bands = options['bands'].split(',')
     spectral_sets = options['set'].split(',')
-
-
-    # This will fail is the 'scene=' is a compressed one, i.e. tar.gz # FIXME
-    if options['set']:
-        # bands = list(LANDSAT_BANDS[spectral_set])
-        if len(options['set']) > 1:
-            spectral_sets = options['set'].split(',')
-
-        bands = retrieve_selected_sets_of_bands(
-                spectral_sets,
-                scene)
-        bands = retrieve_selected_filenames(
-                bands,
-                scene,
-                regular_expression_template)
-
     timestamp = options['timestamp']
     tgis_output = options['tgis_output']
     memory = options['memory']
-
-    if list_bands or count_scenes:  # don't import
-        os.environ['GRASS_VERBOSE'] = '3'
-
-    # if a single mapset requested
-    if single_mapset:
-        mapset = options['mapset']
-
-    else:
-        mapset = MAPSET
-
     if (memory != MEMORY_DEFAULT):
         message = HORIZONTAL_LINE
         message += (f'Cache size set to {memory} MB\n')
         message += HORIZONTAL_LINE
         grass.verbose(_(message))
 
-    # import all scenes from pool
-    if pool:
-        landsat_scenes = [x[0] for x in os.walk(pool)][1:]
-
+    if pool:  # import all scenes from pool
+        landsat_scenes, files = [item for item in os.walk(pool)][0][1:]
+        landsat_scenes += files
         if count_scenes:
+            count = len(landsat_scenes)
+            message = f'Number of scenes in pool: {count}'
             g.message(_(message))
+            return
 
-        else:
-            count = 0
-            for landsat_scene in landsat_scenes:
-                import_geotiffs(landsat_scene,
-                        bands,
-                        mapset,
-                        memory,
-                        single_mapset,
-                        list_bands,
-                        tgis,
-                        timestamp,
-                        skip_microseconds,
-                )
-
-    # import single or multiple given scenes
-    if scene:
+    if scene:  # import single or multiple given scenes
         landsat_scenes = scene.split(',')
 
-        for landsat_scene in landsat_scenes:
-            if 'tar.gz' in landsat_scene:
-                if list_bands:
-                    list_files_in_tar(landsat_scene)
-                    break
-                else:
-                    extract_tgz(landsat_scene)
-                    landsat_scene = landsat_scene.split('.tar.gz')[0]
-                    message = 'Scene {s} decompressed and unpacked'
-                    message = message.format(s = scene)
-                    grass.verbose(_(message))
-                    del(message)
+    for landsat_scene in landsat_scenes:
+        if pool:  # requires the full path to the scene
+            landsat_scene = os.path.join(pool, landsat_scene)
 
-            import_geotiffs(
-                    landsat_scene,
-                    bands,
-                    mapset,
-                    memory,
-                    single_mapset,
-                    list_bands,
-                    tgis,
-                    timestamp,
-                    skip_microseconds,
-            )
+        if 'tar.gz' in landsat_scene:
+            if list_bands:
+                files_in_tar = list_files_in_tar(landsat_scene)
+                break  # FIXME -- Will list only first tgz file!
 
-            if remove_untarred:
-                message = 'Removing unpacked source directory {s}'
-                message = message.format(s = scene)
+            else:
+                extract_tgz(landsat_scene)
+                landsat_scene = landsat_scene.split('.tar.gz')[0]
+                message = f'Scene {scene} decompressed and unpacked'
                 grass.verbose(_(message))
-                shutil.rmtree(scene)
 
-            if not tgis and not is_mtl_in_cell_misc(mapset) and (len(landsat_scenes) > 1):
-                message = HORIZONTAL_LINE
-                g.message(_(message))
+        timestamp = get_timestamp(
+                        scene=landsat_scene,
+                        skip_microseconds=skip_microseconds,
+                    )
+        # date_time = validate_date_time_string(date_time)
+        tgis_timestamp = build_tgis_timestamp(
+                            prefix=prefix,
+                            scene=os.path.basename(landsat_scene),
+                            timestamp=timestamp,
+                        )
+        timestamps.append(tgis_timestamp)
 
-    # output tgis compliant list of maps names and corresponding timestamps
-    if tgis and tgis_output:
+        band_filenames = retrieve_band_filenames(
+                            bands=bands,
+                            spectral_sets=spectral_sets,
+                            scene=landsat_scene,
+                            )
+        import_geotiffs(
+                scene=landsat_scene,
+                band_filenames=band_filenames,
+                mapset=mapset,
+                memory=memory,
+                override_projection=override_projection,
+                prefix=prefix,
+                link_geotiffs=link_geotiffs,
+                skip_import=skip_import,
+                single_mapset=single_mapset,
+                list_bands=list_bands,
+                list_timestamps=list_timestamps,
+                tgis_output=tgis_output,
+                timestamp=timestamp,
+                force_timestamp=force_timestamp,
+                do_not_timestamp=do_not_timestamp,
+                skip_microseconds=skip_microseconds,
+                copy_mtl=copy_mtl,
+        )
+
+        if remove_untarred:
+            message = f'Removing unpacked source directory {scene}'
+            grass.verbose(_(message))
+            shutil.rmtree(scene)
+
+        if (
+                not list_timestamps
+                and not is_mtl_in_cell_misc(mapset)
+                and (len(landsat_scenes) > 1)
+        ):
+            message = HORIZONTAL_LINE
+            g.message(_(message))
+
+    if list_timestamps:
+        for timestamp in timestamps:
+            g.message(_(timestamp))
+
+    if tgis_output:
         output_file = open(tgis_output, 'w')
-
         for timestamp in timestamps:
             timestamp += '\n'
             output_file.write(timestamp)
-
         output_file.close()
 
 if __name__ == "__main__":
