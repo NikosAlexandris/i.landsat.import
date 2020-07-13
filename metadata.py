@@ -1,4 +1,5 @@
 import os
+import shutil
 import glob
 import grass.script as grass
 from grass.pygrass.modules.shortcuts import general as g
@@ -83,3 +84,4 @@ def copy_mtl_in_cell_misc(
             message += f' MTL not transferred to: {path_to_cell_misc}\n'
             message += HORIZONTAL_LINE
 
+    g.message(_(message))
