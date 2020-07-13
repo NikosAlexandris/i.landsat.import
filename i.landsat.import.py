@@ -69,11 +69,10 @@
 #%  description: Skip import of existing band(s)
 #%end
 
-######################
-# %rules
+#%rules
 # %  excludes: -s, --o
-# %end
-######################
+#% excludes: -l, -s
+#%end
 
 #%flag
 #%  key: r
