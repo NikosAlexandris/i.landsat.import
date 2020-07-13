@@ -68,19 +68,17 @@ def import_geotiffs(
     if not single_mapset:
         mapset = os.path.basename(scene)
 
-    # verbosity: target Mapset
+    message = str()
     if not any(x for x in (list_bands, list_timestamps)):
         message = f'Date\t\tTime\t\tTimezone\n{simple_timestamp(timestamp)}'
         message += f'Target Mapset\n@{mapset}\n\n'
 
-    # communicate input band name
     if not list_timestamps:
         message += 'Band\tFilename\n'
         g.message(_(message))
 
     # loop over files inside a "Landsat" directory
     # sort band numerals, source: https://stackoverflow.com/a/2669523/1172302
-
     for filename in band_filenames:
 
         # if not GeoTIFF, keep on working
@@ -92,7 +90,6 @@ def import_geotiffs(
         band_title = f'band {band}'
 
         if not list_timestamps:
-
             message_overwriting = '\t [ Exists, overwriting]'
 
             # communicate input band and source file name
@@ -106,7 +103,6 @@ def import_geotiffs(
                 message_skipping = '\t [ Exists, skipping ]'
 
         if not any(x for x in (list_bands, list_timestamps)):
-
             absolute_filename = os.path.join(scene, filename)
 
             # sort import parameters
