@@ -267,6 +267,7 @@ def main():
         mapset = MAPSET
 
     # options
+    prefix = options['prefix']
     scene = options['scene']
 
     # identify product collection
@@ -277,15 +278,9 @@ def main():
         grass.fatal(_("The given scene identifier does not match any known Landsat product file name pattern!"))
 
     pool = options['pool']
+    bands = options['bands'].split(',')
+    spectral_sets = options['set'].split(',')
 
-    if options['bands']:
-        bands = options['bands'].split(',')
-        bands = retrieve_selected_filenames(
-                bands,
-                scene,
-                regular_expression_template)
-    else:
-        bands = 'all'
 
     # This will fail is the 'scene=' is a compressed one, i.e. tar.gz # FIXME
     if options['set']:
@@ -302,8 +297,6 @@ def main():
                 regular_expression_template)
 
     timestamp = options['timestamp']
-    timestamps = []
-
     tgis_output = options['tgis_output']
     memory = options['memory']
 
