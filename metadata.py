@@ -60,34 +60,26 @@ def copy_mtl_in_cell_misc(
     the Landsat scene's independent Mapset or in else the requested single
     Mapset
     """
-
     if single_mapset:
         mapset = mapset
-
     path_to_cell_misc = get_path_to_cell_misc(mapset)
 
     if is_mtl_in_cell_misc(mapset):
         message = HORIZONTAL_LINE
-        message += ' MTL exists in: {d}\n'.format(d=path_to_cell_misc)
+        message += f' MTL exists in: {path_to_cell_misc}\n'
         message += HORIZONTAL_LINE
-        g.message(_(message))
-        pass
 
     else:
-
         if copy_mtl:
-
             metafile = get_metafile(scene, tgis)
-
-            # copy the metadata file -- Better: check if really copied!
-            message = HORIZONTAL_LINE
-            message += ' MTL file copied at <{directory}>.'
-            message = message.format(directory=path_to_cell_misc)
-            g.message(_(message))
             shutil.copy(metafile, path_to_cell_misc)
-
+            if glob.glob(path_to_cell_misc):
+                # copy the metadata file -- Better: check if really copied!
+                message = HORIZONTAL_LINE
+                message += f' MTL file copied at: {path_to_cell_misc}\n'
+                message += HORIZONTAL_LINE
         else:
             message = HORIZONTAL_LINE
-            message += ' MTL not transferred to {m}/cell_misc'.format(m=scene)
-            g.message(_(message))
+            message += f' MTL not transferred to: {path_to_cell_misc}\n'
+            message += HORIZONTAL_LINE
 
