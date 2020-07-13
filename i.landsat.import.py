@@ -246,13 +246,6 @@ from timestamp import get_timestamp
 grass_environment = grass.gisenv()
 MAPSET = grass_environment['MAPSET']
 
-# helper functions
-def run(cmd, **kwargs):
-    """
-    Pass quiet flag to grass commands
-    """
-    grass.run_command(cmd, quiet=True, **kwargs)
-
 def main():
 
     # flags
