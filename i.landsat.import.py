@@ -312,7 +312,7 @@ def main():
 
     if (memory != MEMORY_DEFAULT):
         message = HORIZONTAL_LINE
-        message += ('Cache size set to {m} MB\n'.format(m = memory))
+        message += (f'Cache size set to {memory} MB\n')
         message += HORIZONTAL_LINE
         grass.verbose(_(message))
 
@@ -321,8 +321,6 @@ def main():
         landsat_scenes = [x[0] for x in os.walk(pool)][1:]
 
         if count_scenes:
-            message = 'Number of scenes in pool: {n}'
-            message = message.format(n = len(landsat_scenes))
             g.message(_(message))
 
         else:
