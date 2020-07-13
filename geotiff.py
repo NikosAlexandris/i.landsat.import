@@ -70,7 +70,7 @@ def import_geotiffs(
 
     message = str()
     if not any(x for x in (list_bands, list_timestamps)):
-        message = f'Date\t\tTime\t\tTimezone\n{simple_timestamp(timestamp)}'
+        message = f'Date\t\tTime\t\tTimezone\n{simple_timestamp(timestamp)}\n\n'
         message += f'Target Mapset\n@{mapset}\n\n'
 
     if not list_timestamps:
