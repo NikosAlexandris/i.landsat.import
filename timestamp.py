@@ -160,15 +160,27 @@ def build_tgis_timestamp(
 
     return tgis_timestamp
 
+def simple_timestamp(timestamp):
+    """
+    """
+    date = timestamp['date']
+    date_Ymd = datetime.strptime(date, "%Y-%m-%d")
+    date_tgis = datetime.strftime(date_Ymd, "%d %b %Y")
 
-        # add to timestamps
-        if tgis_output:
-            global timestamps
-            timestamps.append(message)
+    hours = str(timestamp['hours'])
+    minutes = str(timestamp['minutes'])
+    seconds = str(timestamp['seconds'])
+    timezone = timestamp['timezone']
 
-    if not tgis:
-        message = message.format(date=date, time=time, timezone=timezone)
-    g.message(_(message))
+    time = ':'.join((hours, minutes, seconds))
+    string_parse_time = "%H:%M:%S"
+    if '.' not in time:
+        time += '.000000'
+    if '.' in time:
+        string_parse_time += ".%f"
+    time = datetime.strptime(time, string_parse_time)
+    time = datetime.strftime(time, string_parse_time)
+    return ' '.join((date, time, timezone))
 
 
 def build_r_timestamp(timestamp):
