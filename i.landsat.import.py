@@ -291,6 +291,9 @@ def main():
     if scene:  # import single or multiple given scenes
         landsat_scenes = scene.split(',')
 
+    message_list_timestamps = MESSAGE_LIST_TIMESTAMPS_HEADLINE
+    timestamps = []
+
     for landsat_scene in landsat_scenes:
         if pool:  # requires the full path to the scene
             landsat_scene = os.path.join(pool, landsat_scene)
