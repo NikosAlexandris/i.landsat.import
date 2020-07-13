@@ -249,20 +249,22 @@ MAPSET = grass_environment['MAPSET']
 def main():
 
     # flags
-    link_geotiffs = flags['e']
-    copy_mtl = not flags['c']
-    override_projection = flags['o']
-    skip_import = flags['s']
-    remove_untarred = flags['r']
     list_bands = flags['l']
     count_scenes = flags['n']
-
-    skip_microseconds = flags['m']
-    do_not_timestamp = flags['d']
-    tgis = flags['t']
+    list_timestamps = flags['t']
+    override_projection = flags['o']
+    copy_mtl = not flags['c']
+    link_geotiffs = flags['e']
+    skip_import = flags['s']
+    remove_untarred = flags['r']
     force_timestamp = flags['f']
-
+    do_not_timestamp = flags['d']
+    skip_microseconds = flags['m']
     single_mapset = flags['1']
+    if single_mapset:
+        mapset = options['mapset']
+    else:
+        mapset = MAPSET
 
     # options
     scene = options['scene']
