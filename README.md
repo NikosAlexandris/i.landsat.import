@@ -62,53 +62,68 @@ UTM zone 34N. This is done automagically by using the geo-meta-tags that are
 part of a GeoTIFF file.
 
 ```
-grass72 -c LC81840332014146LGN00_B1.TIF /grassdb/l8/
+grass78 -c LC08_L1TP_184033_20180403_20180417_01_T1_B1.TIF /grassdb/wrs2_184033/
 ```
 
 ## Single scenes
 
 Let's list basic metadata and bands
 ```
-i.landsat.import -l LC81840332014146LGN00
+i.landsat.import -l LC08_L1TP_184033_20180403_20180417_01_T1
 ```
 will return
 ```
-Date            Time
-
-2014-05-26      09:10:26.7368720 +0000
-
-
-Band    Filename
-
-BQA     LC81840332014146LGN00_BQA.TIF
-B11     LC81840332014146LGN00_B11.TIF
-B6      LC81840332014146LGN00_B6.TIF
-B1      LC81840332014146LGN00_B1.TIF
-B8      LC81840332014146LGN00_B8.TIF
-B10     LC81840332014146LGN00_B10.TIF
-B9      LC81840332014146LGN00_B9.TIF
-B7      LC81840332014146LGN00_B7.TIF
-B4      LC81840332014146LGN00_B4.TIF
-B3      LC81840332014146LGN00_B3.TIF
-B2      LC81840332014146LGN00_B2.TIF
-B5      LC81840332014146LGN00_B5.TIF
+Band Filename
+1 LC08_L1TP_184033_20180403_20180417_01_T1_B1.TIF
+2 LC08_L1TP_184033_20180403_20180417_01_T1_B2.TIF
+3 LC08_L1TP_184033_20180403_20180417_01_T1_B3.TIF
+4 LC08_L1TP_184033_20180403_20180417_01_T1_B4.TIF
+5 LC08_L1TP_184033_20180403_20180417_01_T1_B5.TIF
+6 LC08_L1TP_184033_20180403_20180417_01_T1_B6.TIF
+7 LC08_L1TP_184033_20180403_20180417_01_T1_B7.TIF
+8 LC08_L1TP_184033_20180403_20180417_01_T1_B8.TIF
+9 LC08_L1TP_184033_20180403_20180417_01_T1_B9.TIF
+10 LC08_L1TP_184033_20180403_20180417_01_T1_B10.TIF
+11 LC08_L1TP_184033_20180403_20180417_01_T1_B11.TIF
+BQA LC08_L1TP_184033_20180403_20180417_01_T1_BQA.TIF
 ```
 
-Its timestamp, in form to use with GRASS' TGIS, is:
+Get its timestamp, in form to use with GRASS' TGIS, via:
 ```
-i.landsat.import -t LC81840332014146LGN00
+i.landsat.import -t LC08_L1TP_184033_20180403_20180417_01_T1
 
-LC81840332014146LGN00<Suffix>|2014-05-26 09:10:26.7368720 +0000
+LC08_L1TP_184033_20180403_20180417_01_T1|03 Apr 2018 09:10:20.674074 +0000
 ```
 
-*At the moment*, it is required to edit manually the <Suffix> part to
-comply with the name of a STRDS. [ToDo: provide for a prefix to do this less
-cumbersome].
-
-We can import the scene in its own Mapset (use --v for verbosity) and request
+We can import the scene in its own Mapset and request
 from the module to *not* copy the MTL file under `cell_misc`
 ```
-i.landsat.import -c LC81840332014146LGN00
+i.landsat.import -c LC08_L1TP_184033_20180403_20180417_01_T1
+
+Date Time Timezone
+2018-04-03 09:10:20.674074 +0000
+
+Target Mapset
+@LC08_L1TP_184033_20180403_20180417_01_T1
+
+Band Filename
+1 LC08_L1TP_184033_20180403_20180417_01_T1_B1.TIF
+2 LC08_L1TP_184033_20180403_20180417_01_T1_B2.TIF
+3 LC08_L1TP_184033_20180403_20180417_01_T1_B3.TIF
+4 LC08_L1TP_184033_20180403_20180417_01_T1_B4.TIF
+5 LC08_L1TP_184033_20180403_20180417_01_T1_B5.TIF
+6 LC08_L1TP_184033_20180403_20180417_01_T1_B6.TIF
+7 LC08_L1TP_184033_20180403_20180417_01_T1_B7.TIF
+8 LC08_L1TP_184033_20180403_20180417_01_T1_B8.TIF
+9 LC08_L1TP_184033_20180403_20180417_01_T1_B9.TIF
+10 LC08_L1TP_184033_20180403_20180417_01_T1_B10.TIF
+11 LC08_L1TP_184033_20180403_20180417_01_T1_B11.TIF
+BQA LC08_L1TP_184033_20180403_20180417_01_T1_BQA.TIF
+
+-------------------------------------------------------------------------------
+MTL not transferred to:
+/geoyeux/grassdb/wrs2_180034/LC08_L1TP_184033_20180403_20180417_01_T1/cell_misc
+-------------------------------------------------------------------------------
 ```
 
 By the way, the module will create a new Mapset, named after the directory
@@ -122,7 +137,7 @@ existing bands which otherwise would break the execution. As well, it helps in
 cases where some bands have been removed.
 
 ```
-i.landsat.import LC81840332014146LGN00 -s --v
+i.landsat.import LC08_L1TP_184033_20180403_20180417_01_T1 -s
 ```
 
 Noteworthy is the `memory` option. It is passed, internally, to `r.in.gdal`,
@@ -135,6 +150,8 @@ existing maps is desired.
 
 Using the `-e` flags, the module calls internally `r.external`. GeoTIFF files
 will be linked to GRASS' data base via pseudo GRASS raster maps.
+
+*** Below To Update ***
 
 ## Multiples scenes
 
@@ -255,14 +272,7 @@ process. This will, subsequently, brake any scripted workflow in which
 
 [Low]
 
-- Complete README.md, update/improve manual
-- Discuss about the import in multiple Mapsets (see Stefan's B. comment)
-- Ideally, get rid of all Landsat-meta related stuff, develop further a
-Landsat(8) class with getters and setters.
-- Actually, the whole date-time parsing needs to be redone, from scratch.
-Better to use datetime objects.
-- Note, microseconds are ignored in the TGIS world
-- Add `bands` option, to selectively import specified bands
+- Update README.md and manual
 - Test for range of input date, time, timezone 
 - What other meta can be transferred from the MTL file? Why not all! As in
 https://github.com/NikosAlexandris/i.landsat8.swlst/blob/master/landsat8_mtl.py?
@@ -272,6 +282,7 @@ Notes
 
 - The "first" source for this module was a script published in
 <http://grasswiki.osgeo.org/wiki/LANDSAT#Automated_data_import>.
+- Microseconds are ignored in the TGIS world
 
 Sources
 =======
