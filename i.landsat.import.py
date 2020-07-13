@@ -113,6 +113,7 @@
 
 #%rules
 #% requires_all: -r, scene
+#% excludes: scene, -n
 #%end
 
 #%option
