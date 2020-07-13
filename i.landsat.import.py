@@ -260,48 +260,6 @@ def scene_is_empty(scene):
     """
     pass
 
-def list_files_in_tar(tgz):
-    """List files in tar.gz file"""
-    g.message(_('Listing files in tar.gz file'))
-
-    # open tar.gz file in read mode
-    tar = tarfile.TarFile.open(name=tgz, mode='r')
-
-    # get names
-    members = tar.getnames()
-
-    # print out
-    members = """
-    {}
-    """.format('\n'.join(members[1:]))
-    g.message(_(members))
-
-def extract_tgz(tgz):
-    """
-    Decompress and unpack a .tgz file
-    """
-
-    g.message(_('Extracting files from tar.gz file'))
-
-    # open tar.gz file in read mode
-    tar = tarfile.TarFile.open(name=tgz, mode='r')
-
-    # get the scene's (base)name
-    tgz_base = os.path.basename(tgz).split('.tar.gz')[0]
-
-    # try to create a directory with the scene's (base)name
-    # source: <http://stackoverflow.com/a/14364249/1172302>
-    try:
-        os.makedirs(tgz_base)
-
-    # if something went wrong, raise an error
-    except OSError:
-        if not os.path.isdir(tgz_base):
-            raise
-
-    # extract files indide the scene directory
-    tar.extractall(path=tgz_base)
-
 def import_geotiffs(
         scene,
         bands,
