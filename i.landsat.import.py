@@ -253,15 +253,6 @@ def run(cmd, **kwargs):
     """
     grass.run_command(cmd, quiet=True, **kwargs)
 
-def scene_is_empty(scene):
-    """
-    What to do when an empty scene directory is found?
-    Fail and indicate there is a problem.
-    """
-    pass
-
-
-
 def main():
 
     # flags
