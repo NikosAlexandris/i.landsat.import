@@ -18,7 +18,7 @@ def get_path_to_cell_misc(mapset):
     path_to_cell_misc = '/'.join([GISDBASE, LOCATION, mapset, CELL_MISC])
     return path_to_cell_misc
 
-def get_metafile(scene, tgis):
+def get_metafile(scene):
     """
     Get metadata MTL filename
     """
@@ -26,10 +26,8 @@ def get_metafile(scene, tgis):
     if glob.glob(scene + '/*MTL.txt') == []:
         # grass.warning(_("Found an empty scene directory! Passing..."))
         message = "Missing 'MTL' metadata file!"
-        message += ' Skipping import process for this scene.'
+        message += f' Skipping import process for scene {scene}.'
         grass.fatal(_(message))
-        del(message)
-        pass
     else:
         metafile = glob.glob(scene + '/*MTL.txt')[0]
         metafile_basename = os.path.basename(metafile)
