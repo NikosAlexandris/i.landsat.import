@@ -219,7 +219,6 @@ sys.path.insert(
 )
 
 import shutil
-import tarfile
 import glob
 import re
 # import shlex
@@ -230,18 +229,16 @@ from grass.exceptions import CalledModuleError
 from grass.pygrass.modules.shortcuts import general as g
 from grass.pygrass.modules.shortcuts import raster as r
 from constants import HORIZONTAL_LINE
-from constants import IMAGE_QUALITY_STRINGS
 from constants import MEMORY_DEFAULT
-from constants import MONTHS
-from constants import MTL_STRING
-from constants import QA_STRING
-from identifiers import LANDSAT_BANDS
-from identifiers import LANDSAT_IDENTIFIERS
-from identifiers import GEOTIFF_EXTENSION
-from metadata import get_metafile
+from messages import MESSAGE_LIST_TIMESTAMPS_HEADLINE
 from metadata import is_mtl_in_cell_misc
 from metadata import copy_mtl_in_cell_misc
+from timestamp import build_tgis_timestamp
 from timestamp import get_timestamp
+from bands import retrieve_band_filenames
+from tar import list_files_in_tar
+from tar import extract_tgz
+from geotiff import import_geotiffs
 
 grass_environment = grass.gisenv()
 MAPSET = grass_environment['MAPSET']
