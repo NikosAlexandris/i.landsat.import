@@ -304,8 +304,7 @@ def main():
     timestamp = options['timestamp']
     timestamps = []
 
-    tgis_output = options['output_tgis']
-
+    tgis_output = options['tgis_output']
     memory = options['memory']
 
     if list_bands or count_scenes:  # don't import
