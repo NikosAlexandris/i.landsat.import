@@ -173,7 +173,7 @@
 #%end
 
 #%option G_OPT_F_OUTPUT
-#%  key: output_tgis
+#%  key: tgis_output
 #%  key_desc: filename
 #%  label: Output file name for t.register compliant timestamps
 #%  description: List of scene names and corresponding timestamps
@@ -183,14 +183,14 @@
 #%end
 
 #%rules
-#%  requires_all: output_tgis, -t
+##%  requires_all: tgis_output, -t
 #%end
 
 #%option
 #% key: prefix
 #% key_desc: prefix string
 #% type: string
-#% label: Prefix for scene names in output_tgis
+#% label: Prefix for scene names in tgis_output
 #% description: Scene names will get this prefix in the tgis output file
 #% required: no
 #%end
