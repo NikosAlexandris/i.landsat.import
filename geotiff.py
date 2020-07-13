@@ -75,7 +75,7 @@ def import_geotiffs(
 
     if not list_timestamps:
         message += 'Band\tFilename\n'
-        g.message(_(message))
+        g.message(message, flags='v')
 
     # loop over files inside a "Landsat" directory
     # sort band numerals, source: https://stackoverflow.com/a/2669523/1172302
@@ -91,20 +91,14 @@ def import_geotiffs(
 
         if not list_timestamps:
             message_overwriting = '\t [ Exists, overwriting]'
-
             # communicate input band and source file name
-            message = f'{band}'
-            message += f'\t{filename}'
-            if not skip_import:
-                g.message(_(message))
-
-            else:
+            message = f'{band}\t{filename}'
+            if skip_import:
                 # message for skipping import
                 message_skipping = '\t [ Exists, skipping ]'
 
         if not any(x for x in (list_bands, list_timestamps)):
             absolute_filename = os.path.join(scene, filename)
-
             # sort import parameters
             parameters = dict(
                     input = absolute_filename,
@@ -132,10 +126,10 @@ def import_geotiffs(
 
                 if force_timestamp:
                     set_timestamp(name, timestamp)
-                    g.message(_(f'   >>> Force-stamp {timestamp} @ band {name}'))
+                    g.message(f'   >>> Force-stamp {timestamp} @ band {name}')
 
                 message_skipping = message + message_skipping
-                g.message(_(message_skipping))
+                g.message(message_skipping, flags='v')
                 pass
 
             else:
@@ -145,17 +139,17 @@ def import_geotiffs(
                 ):
                     if force_timestamp:
                         set_timestamp(name, timestamp)
-                        g.message(_(f'   >>> Force-stamp {timestamp} @ band {name}'))
+                        g.message(f'   >>> Force-stamp {timestamp} @ band {name}')
 
                     message_overwriting = message + message_overwriting
-                    g.message(_(message_overwriting))
+                    g.message(message_overwriting, flags='v')
                     pass
 
                 if (skip_import and not find_existing_band(name)):
                     # FIXME
                     # communicate input band and source file name
                     message = f'{band}\t{filename}'
-                    grass.message(_(message))
+                    g.message(message, flags='v')
 
                 if link_geotiffs:
                     # What happens with the '--overwrite' flag?
