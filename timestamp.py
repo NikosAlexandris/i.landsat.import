@@ -105,9 +105,31 @@ def get_timestamp(scene, skip_microseconds=False):
 
     return date_time
 
-def print_timestamp(scene, timestamp, tgis=False):
+def build_tgis_timestamp(
+        prefix,
+        scene,
+        timestamp,
+    ):
     """
-    Print out the timestamp
+    Build and return a t.register compliant timestamp
+
+    Parameters
+    ----------
+    prefix :
+        Scene name prefix
+
+    scene :
+        Scene name
+
+    timestamp :
+        User-fed timestamp
+
+    list_timestamps :
+        Boolean...
+
+    Returns
+    -------
+        This function does not return anything.
     """
     date = timestamp['date']
     date_Ymd = datetime.strptime(date, "%Y-%m-%d")
@@ -127,21 +149,17 @@ def print_timestamp(scene, timestamp, tgis=False):
     time = datetime.strptime(time, string_parse_time)
     time = datetime.strftime(time, string_parse_time)
 
-    message = 'Date\t\tTime\n'
-    message += '\t{date}\t{time} {timezone}\n\n'
+    tgis_timestamp = str()
+    # if not list_timestamps:
+    #     tgis_timestamp += f'\t{date}\t{time} {timezone}\n\n'
 
-    # if -t requested
-    if tgis:
+    # else:
+    #     # verbose if -t instructed
+    os.environ['GRASS_VERBOSE'] = GRASS_VERBOSITY_LELVEL_3
+    tgis_timestamp += f'{prefix}{scene}|{date_tgis} {time} {timezone}'
 
-        # verbose if -t instructed
-        os.environ['GRASS_VERBOSE'] = GRASS_VERBOSITY_LELVEL_3
+    return tgis_timestamp
 
-        # timezone = timezone.replace('+', '')
-        prefix = '<Prefix>'
-        if prefix:
-            prefix = options['prefix']
-        # message = '{p}{s}|{d} {t} {tz}'.format(s=scene, p=prefix, d=date, t=time, tz=timezone)
-        message = '{p}{s}|{d} {t}'.format(s=scene, p=prefix, d=date_tgis, t=time)
 
         # add to timestamps
         if tgis_output:
