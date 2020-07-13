@@ -152,36 +152,30 @@ def print_timestamp(scene, timestamp, tgis=False):
         message = message.format(date=date, time=time, timezone=timezone)
     g.message(_(message))
 
-def set_timestamp(band, timestamp):
-    """
-    Builds and sets the timestamp (as a string!) for a raster map
-    """
 
+def build_r_timestamp(timestamp):
+    """
+    """
     if isinstance(timestamp, dict):
-
         # year, month, day
         if ('-' in timestamp['date']):
             year, month, day = timestamp['date'].split('-')
         # else, if not ('-' in timestamp['date']): what?
-
         month = MONTHS[month]
-
-        # assembly
         day_month_year = ' '.join((day, month, year))
-
         # hours, minutes, seconds
         hours = str(timestamp['hours'])
         minutes = str(timestamp['minutes'])
         seconds = str(timestamp['seconds'])
-
-        # assembly
         hours_minutes_seconds = ':'.join((hours, minutes, seconds))
-
         # assembly the string
         timestamp = ' '.join((day_month_year, hours_minutes_seconds))
-        # timestamp = shlex.quotes(timestamp)  # This is failing in my bash!
+    return timestamp
 
+def set_timestamp(band, timestamp):
+    """
+    Builds and sets the timestamp (as a string!) for a raster map
+    """
+    timestamp = build_r_timestamp(timestamp)
     # stamp bands
     grass.run_command('r.timestamp', map=band, date=timestamp, verbose=True)
-
-
