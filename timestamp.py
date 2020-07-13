@@ -36,13 +36,13 @@ def add_leading_zeroes(real_number, n):
      bits = real_number.split('.')
      return '{integer}.{real}'.format(integer=bits[0].zfill(n), real=bits[1])
 
-def get_timestamp(scene, tgis, skip_microseconds=False):
+def get_timestamp(scene, skip_microseconds=False):
     """
     Scope:  Retrieve timestamp of a Landsat scene
     Input:  Metadata *MTL.txt file
     Output: Return date, time and timezone of acquisition
     """
-    metafile = get_metafile(scene, tgis)
+    metafile = get_metafile(scene)
     date_time = dict()
 
     try:
