@@ -379,13 +379,11 @@ def main():
                 message = 'Removing unpacked source directory {s}'
                 message = message.format(s = scene)
                 grass.verbose(_(message))
-                del(message)
                 shutil.rmtree(scene)
 
             if not tgis and not is_mtl_in_cell_misc(mapset) and (len(landsat_scenes) > 1):
                 message = HORIZONTAL_LINE
                 g.message(_(message))
-                del(message)
 
     # output tgis compliant list of maps names and corresponding timestamps
     if tgis and tgis_output:
@@ -396,7 +394,6 @@ def main():
             output_file.write(timestamp)
 
         output_file.close()
-        del(output_file)
 
 if __name__ == "__main__":
     options, flags = grass.parser()
