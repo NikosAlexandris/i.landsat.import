@@ -28,7 +28,7 @@ def get_metafile(scene):
         # grass.warning(_("Found an empty scene directory! Passing..."))
         message = "Missing 'MTL' metadata file!"
         message += f' Skipping import process for scene {scene}.'
-        grass.fatal(_(message))
+        grass.fatal(message)
     else:
         metafile = glob.glob(scene + '/*MTL.txt')[0]
         metafile_basename = os.path.basename(metafile)
@@ -84,4 +84,4 @@ def copy_mtl_in_cell_misc(
             message += f' MTL not transferred to: {path_to_cell_misc}\n'
             message += HORIZONTAL_LINE
 
-    g.message(_(message))
+    g.message(message)

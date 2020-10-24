@@ -281,7 +281,7 @@ Notes
 =====
 
 - The "first" source for this module was a script published in
-<http://grasswiki.osgeo.org/wiki/LANDSAT#Automated_data_import>.
+<https://grasswiki.osgeo.org/wiki/LANDSAT#Automated_data_import>.
 - Microseconds are ignored in the TGIS world
 
 Sources
