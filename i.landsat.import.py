@@ -277,7 +277,7 @@ def main():
         message = HORIZONTAL_LINE
         message += (f'Cache size set to {memory} MB\n')
         message += HORIZONTAL_LINE
-        grass.verbose(_(message))
+        grass.verbose(message)
 
     if pool:  # import all scenes from pool
         landsat_scenes, files = [item for item in os.walk(pool)][0][1:]
@@ -285,7 +285,7 @@ def main():
         if count_scenes:
             count = len(landsat_scenes)
             message = f'Number of scenes in pool: {count}'
-            g.message(_(message))
+            g.message(message)
             return
 
     if scene:  # import single or multiple given scenes
@@ -307,7 +307,7 @@ def main():
                 extract_tgz(landsat_scene)
                 landsat_scene = landsat_scene.split('.tar.gz')[0]
                 message = f'Scene {scene} decompressed and unpacked'
-                grass.verbose(_(message))
+                grass.verbose(message)
 
         timestamp = get_timestamp(
                         scene=landsat_scene,
@@ -348,7 +348,7 @@ def main():
 
         if remove_untarred:
             message = f'Removing unpacked source directory {scene}'
-            grass.verbose(_(message))
+            grass.verbose(message)
             shutil.rmtree(scene)
 
         if (
@@ -357,11 +357,11 @@ def main():
                 and (len(landsat_scenes) > 1)
         ):
             message = HORIZONTAL_LINE
-            g.message(_(message))
+            g.message(message)
 
     if list_timestamps:
         for timestamp in timestamps:
-            g.message(_(timestamp))
+            g.message(timestamp)
 
     if tgis_output:
         output_file = open(tgis_output, 'w')

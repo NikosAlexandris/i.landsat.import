@@ -128,7 +128,7 @@ def get_name_band(scene, filename, single_mapset=False):
     if MTL_STRING in absolute_filename:  # use grass.warning(_("..."))?
         message_fatal = "Detected an MTL file with the .TIF extension!"
         message_fatal += "\nPlease, rename the extension to .txt and retry."
-        grass.fatal(_(message_fatal))
+        grass.fatal(message_fatal)
 
     # is it the QA layer?
     elif (QA_STRING) in absolute_filename:

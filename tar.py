@@ -16,7 +16,7 @@ def list_files_in_tar(tgz):
     scene = compressed_scene[:index_of_dot]
     message = f'List of files in {scene}'
     message += members
-    g.message(_(message))
+    g.message(message)
 
 def extract_tgz(tgz):
     """
